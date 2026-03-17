@@ -1,0 +1,33 @@
+<section class="page">
+  <h1>Dashboard</h1>
+
+  <ng-container *ngIf="session.isSuperadmin()">
+    <p>Panel global de superadmin.</p>
+
+    <div class="cards">
+      <article class="card">
+        <h2>Negocios</h2>
+        <p>Gestiona altas y consulta el listado general.</p>
+        <a routerLink="/businesses">Ver negocios</a>
+      </article>
+
+      <article class="card">
+        <h2>Alta rápida</h2>
+        <p>Crea un nuevo negocio desde la interfaz.</p>
+        <a routerLink="/businesses/new">Crear negocio</a>
+      </article>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="session.isBusinessAdmin()">
+    <p>Panel del negocio. Desde aquí gestionarás empleados, servicios y agenda.</p>
+
+    <div class="cards">
+      <article class="card">
+        <h2>Mi negocio</h2>
+        <p>Accede al resumen operativo de tu negocio.</p>
+        <a routerLink="/my-business">Abrir panel</a>
+      </article>
+    </div>
+  </ng-container>
+</section>

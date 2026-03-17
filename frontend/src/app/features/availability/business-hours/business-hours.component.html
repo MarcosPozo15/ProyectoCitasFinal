@@ -1,0 +1,24 @@
+<section class="page">
+  <div class="page-header">
+    <h1>Horario del negocio</h1>
+    <a [routerLink]="['/my-business']">Volver</a>
+  </div>
+
+  <p *ngIf="isLoading">Cargando...</p>
+
+  <div class="card" *ngIf="!isLoading">
+    <div class="row" *ngFor="let row of rows">
+      <div class="weekday">{{ labelFor(row.weekday) }}</div>
+      <label><input type="checkbox" [(ngModel)]="row.isOpen" /> Abierto</label>
+      <input type="time" [(ngModel)]="row.startTime" />
+      <input type="time" [(ngModel)]="row.endTime" />
+    </div>
+
+    <button (click)="saveAll()" [disabled]="isSaving">
+      {{ isSaving ? 'Guardando...' : 'Guardar horario' }}
+    </button>
+
+    <p class="success" *ngIf="successMessage">{{ successMessage }}</p>
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  </div>
+</section>

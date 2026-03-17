@@ -1,0 +1,31 @@
+<section class="page">
+  <div class="page-header">
+    <div>
+      <h1>Servicios</h1>
+      <div class="header-links">
+        <a class="secondary-link" routerLink="/my-business">Volver a mi negocio</a>
+        <a class="secondary-link" [routerLink]="['/businesses', businessId, 'promotions']">
+          Ir a promociones
+        </a>
+      </div>
+    </div>
+
+    <a class="primary-link" [routerLink]="['/businesses', businessId, 'services', 'new']">
+      Nuevo servicio
+    </a>
+  </div>
+
+  <p *ngIf="isLoading">Cargando...</p>
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+  <div class="grid" *ngIf="!isLoading && !errorMessage">
+    <article class="card" *ngFor="let item of items">
+      <h2>{{ item.name }}</h2>
+      <p><strong>Slug:</strong> {{ item.slug }}</p>
+      <p><strong>Duración:</strong> {{ item.durationMinutes }} min</p>
+      <p><strong>Precio:</strong> {{ item.price }}</p>
+      <p><strong>Estado:</strong> {{ item.status }}</p>
+      <p><strong>Depósito:</strong> {{ item.requiresDeposit ? 'Sí' : 'No' }}</p>
+    </article>
+  </div>
+</section>

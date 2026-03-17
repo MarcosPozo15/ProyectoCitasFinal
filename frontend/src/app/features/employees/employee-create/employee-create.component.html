@@ -1,0 +1,51 @@
+<section class="page">
+  <div class="page-header">
+    <h1>Nuevo empleado</h1>
+    <a [routerLink]="['/businesses', businessId, 'employees']">Volver</a>
+  </div>
+
+  <form class="form-card" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="grid">
+      <div>
+        <label>Nombre</label>
+        <input type="text" formControlName="firstName" />
+      </div>
+
+      <div>
+        <label>Apellidos</label>
+        <input type="text" formControlName="lastName" />
+      </div>
+
+      <div>
+        <label>Email</label>
+        <input type="email" formControlName="email" />
+      </div>
+
+      <div>
+        <label>Teléfono</label>
+        <input type="text" formControlName="phone" />
+      </div>
+
+      <div>
+        <label>Puesto</label>
+        <input type="text" formControlName="jobTitle" />
+      </div>
+
+      <div>
+        <label>Color</label>
+        <input type="text" formControlName="colorHex" />
+      </div>
+
+      <div class="full">
+        <label>Bio</label>
+        <textarea rows="4" formControlName="bio"></textarea>
+      </div>
+    </div>
+
+    <button type="submit" [disabled]="isSubmitting">
+      {{ isSubmitting ? 'Guardando...' : 'Crear empleado' }}
+    </button>
+
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  </form>
+</section>

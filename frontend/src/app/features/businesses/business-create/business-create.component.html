@@ -1,0 +1,116 @@
+<section class="page">
+  <div class="page-header">
+    <h1>Nuevo negocio</h1>
+    <a routerLink="/">Volver</a>
+  </div>
+
+  <form class="form-card" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="grid">
+      <div>
+        <label>Nombre</label>
+        <input type="text" formControlName="name" />
+      </div>
+
+      <div>
+        <label>Slug</label>
+        <input type="text" formControlName="slug" />
+      </div>
+
+      <div>
+        <label>Razón social</label>
+        <input type="text" formControlName="legalName" />
+      </div>
+
+      <div>
+        <label>CIF/NIF</label>
+        <input type="text" formControlName="taxId" />
+      </div>
+
+      <div>
+        <label>Email negocio</label>
+        <input type="email" formControlName="email" />
+      </div>
+
+      <div>
+        <label>Teléfono negocio</label>
+        <input type="text" formControlName="phone" />
+      </div>
+
+      <div>
+        <label>Web</label>
+        <input type="text" formControlName="website" />
+      </div>
+
+      <div>
+        <label>Depósito %</label>
+        <input type="number" formControlName="depositPercentage" />
+      </div>
+
+      <div>
+        <label>Color principal</label>
+        <input type="text" formControlName="primaryColor" />
+      </div>
+
+      <div>
+        <label>Color secundario</label>
+        <input type="text" formControlName="secondaryColor" />
+      </div>
+
+      <div>
+        <label>Dirección</label>
+        <input type="text" formControlName="addressLine1" />
+      </div>
+
+      <div>
+        <label>Ciudad</label>
+        <input type="text" formControlName="city" />
+      </div>
+
+      <div>
+        <label>Código postal</label>
+        <input type="text" formControlName="postalCode" />
+      </div>
+
+      <div>
+        <label>País</label>
+        <input type="text" formControlName="country" />
+      </div>
+
+      <div class="full">
+        <label>Descripción</label>
+        <textarea rows="4" formControlName="description"></textarea>
+      </div>
+
+      <div>
+        <label>Admin email</label>
+        <input type="email" formControlName="adminEmail" />
+      </div>
+
+      <div>
+        <label>Admin contraseña</label>
+        <input type="password" formControlName="adminPassword" />
+      </div>
+
+      <div>
+        <label>Admin nombre</label>
+        <input type="text" formControlName="adminFirstName" />
+      </div>
+
+      <div>
+        <label>Admin apellidos</label>
+        <input type="text" formControlName="adminLastName" />
+      </div>
+
+      <div>
+        <label>Admin teléfono</label>
+        <input type="text" formControlName="adminPhone" />
+      </div>
+    </div>
+
+    <button type="submit" [disabled]="isSubmitting">
+      {{ isSubmitting ? 'Guardando...' : 'Crear negocio' }}
+    </button>
+
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  </form>
+</section>

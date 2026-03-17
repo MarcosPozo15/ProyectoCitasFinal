@@ -1,0 +1,29 @@
+<section class="page">
+  <div class="page-header">
+    <div>
+      <h1>Bloqueos</h1>
+      <a class="back-link" routerLink="/my-business">← Volver a mi negocio</a>
+    </div>
+
+    <a class="primary-link" [routerLink]="['/businesses', businessId, 'blockouts', 'new']">
+      Nuevo bloqueo
+    </a>
+  </div>
+
+  <p *ngIf="isLoading">Cargando...</p>
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+  <div class="grid" *ngIf="!isLoading && !errorMessage">
+    <article class="card" *ngFor="let item of items">
+      <h2>{{ item.title }}</h2>
+      <p><strong>Tipo:</strong> {{ item.targetType }}</p>
+      <p><strong>Inicio:</strong> {{ item.startsAt }}</p>
+      <p><strong>Fin:</strong> {{ item.endsAt }}</p>
+      <p><strong>Descripción:</strong> {{ item.description || '-' }}</p>
+
+      <button class="danger-btn" (click)="deleteBlockout(item.id)" [disabled]="isDeleting">
+        Eliminar
+      </button>
+    </article>
+  </div>
+</section>

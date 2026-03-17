@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16
+    platform: linux/amd64
+    container_name: citas_saas_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: citas_saas
+      POSTGRES_USER: citas_user
+      POSTGRES_PASSWORD: citas_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U citas_user -d citas_saas"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

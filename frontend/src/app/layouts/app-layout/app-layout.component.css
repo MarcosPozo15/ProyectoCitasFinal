@@ -1,0 +1,49 @@
+.layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: #111827;
+  color: white;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.brand {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nav a {
+  color: white;
+  text-decoration: none;
+  opacity: 0.9;
+}
+
+.nav a:hover {
+  opacity: 1;
+}
+
+.content {
+  padding: 32px;
+}
+
+.logout {
+  margin-top: auto;
+  border: 0;
+  background: white;
+  color: #111827;
+  padding: 12px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+}

@@ -1,0 +1,44 @@
+<section class="page">
+  <div class="page-header">
+    <h1>Asignar servicio</h1>
+    <a [routerLink]="['/businesses', businessId, 'employees', employeeId, 'services']">
+      Volver
+    </a>
+  </div>
+
+  <p *ngIf="isLoadingServices">Cargando servicios...</p>
+
+  <form
+    class="form-card"
+    *ngIf="!isLoadingServices"
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+  >
+    <div class="grid">
+      <div class="full">
+        <label>Servicio</label>
+        <select formControlName="serviceId">
+          <option *ngFor="let service of availableServices" [value]="service.id">
+            {{ service.name }} - {{ service.slug }}
+          </option>
+        </select>
+      </div>
+
+      <div>
+        <label>Duración personalizada (min)</label>
+        <input type="number" formControlName="customDurationMin" />
+      </div>
+
+      <div>
+        <label>Precio personalizado</label>
+        <input type="number" formControlName="customPrice" />
+      </div>
+    </div>
+
+    <button type="submit" [disabled]="isSubmitting">
+      {{ isSubmitting ? 'Guardando...' : 'Asignar servicio' }}
+    </button>
+
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  </form>
+</section>

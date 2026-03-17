@@ -1,0 +1,78 @@
+<section class="page">
+  <div class="page-header">
+    <div>
+      <h1>Nueva promoción</h1>
+      <div class="header-links">
+        <a class="secondary-link" [routerLink]="['/businesses', businessId, 'promotions']">
+          Volver a promociones
+        </a>
+        <a class="secondary-link" routerLink="/my-business">Volver a mi negocio</a>
+      </div>
+    </div>
+  </div>
+
+  <p *ngIf="isLoading">Cargando...</p>
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  <p class="success" *ngIf="successMessage">{{ successMessage }}</p>
+
+  <form
+    *ngIf="!isLoading"
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+    class="card form-grid"
+  >
+    <label>
+      <span>Nombre</span>
+      <input type="text" formControlName="name" />
+    </label>
+
+    <label>
+      <span>Descripción</span>
+      <textarea rows="4" formControlName="description"></textarea>
+    </label>
+
+    <label>
+      <span>Tipo</span>
+      <select formControlName="type">
+        <option value="PERCENTAGE">Porcentaje</option>
+        <option value="FIXED_AMOUNT">Importe fijo</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Valor</span>
+      <input type="number" step="0.01" formControlName="value" />
+    </label>
+
+    <label>
+      <span>Inicio</span>
+      <input type="datetime-local" formControlName="startsAt" />
+    </label>
+
+    <label>
+      <span>Fin</span>
+      <input type="datetime-local" formControlName="endsAt" />
+    </label>
+
+    <label>
+      <span>Servicio</span>
+      <select formControlName="serviceId">
+        <option value="">Promoción general</option>
+        <option *ngFor="let service of services" [value]="service.id">
+          {{ service.name }}
+        </option>
+      </select>
+    </label>
+
+    <label class="checkbox-row">
+      <input type="checkbox" formControlName="isActive" />
+      <span>Activa</span>
+    </label>
+
+    <div class="actions-row">
+      <button type="submit" [disabled]="isSubmitting">
+        {{ isSubmitting ? 'Guardando...' : 'Crear promoción' }}
+      </button>
+    </div>
+  </form>
+</section>

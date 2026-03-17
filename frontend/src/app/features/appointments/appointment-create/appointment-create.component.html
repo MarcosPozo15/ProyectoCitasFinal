@@ -1,0 +1,91 @@
+<section class="page">
+  <div class="page-header">
+    <h1>Nueva cita</h1>
+    <a [routerLink]="['/businesses', businessId, 'appointments']">Volver</a>
+  </div>
+
+  <p *ngIf="isLoading">Cargando datos...</p>
+
+  <form class="form-card" *ngIf="!isLoading" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="grid">
+      <div>
+        <label>Empleado</label>
+        <select formControlName="employeeId">
+          <option *ngFor="let employee of employees" [value]="employee.id">
+            {{ employee.firstName }} {{ employee.lastName }}
+          </option>
+        </select>
+      </div>
+
+      <div>
+        <label>Servicio</label>
+        <select formControlName="serviceId">
+          <option *ngFor="let service of services" [value]="service.id">
+            {{ service.name }}
+          </option>
+        </select>
+      </div>
+
+      <div>
+        <label>Fecha</label>
+        <input type="date" formControlName="date" />
+      </div>
+
+      <div class="availability-actions">
+        <button type="button" (click)="searchAvailability()" [disabled]="isSearching">
+          {{ isSearching ? 'Buscando...' : 'Buscar huecos' }}
+        </button>
+      </div>
+
+      <div class="full" *ngIf="slots.length > 0">
+        <label>Huecos disponibles</label>
+        <div class="slots">
+          <button
+            type="button"
+            class="slot-btn"
+            *ngFor="let slot of slots"
+            (click)="chooseSlot(slot)"
+          >
+            {{ slot.startTime }} - {{ slot.endTime }}
+          </button>
+        </div>
+      </div>
+
+      <div class="full">
+        <label>StartAt seleccionado</label>
+        <input type="text" formControlName="startsAt" />
+      </div>
+
+      <div>
+        <label>Nombre cliente</label>
+        <input type="text" formControlName="customerFirstName" />
+      </div>
+
+      <div>
+        <label>Apellidos cliente</label>
+        <input type="text" formControlName="customerLastName" />
+      </div>
+
+      <div>
+        <label>Email cliente</label>
+        <input type="email" formControlName="customerEmail" />
+      </div>
+
+      <div>
+        <label>Teléfono cliente</label>
+        <input type="text" formControlName="customerPhone" />
+      </div>
+
+      <div class="full">
+        <label>Notas</label>
+        <textarea rows="4" formControlName="customerNotes"></textarea>
+      </div>
+    </div>
+
+    <button type="submit" [disabled]="isSubmitting">
+      {{ isSubmitting ? 'Guardando...' : 'Crear cita' }}
+    </button>
+
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  </form>
+</section>

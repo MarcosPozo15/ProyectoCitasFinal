@@ -1,0 +1,45 @@
+<section class="page">
+  <h1>Mi negocio</h1>
+
+  <p *ngIf="isLoading">Cargando...</p>
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+  <ng-container *ngIf="!isLoading && !errorMessage && business">
+    <div class="card">
+      <h2>{{ business.name }}</h2>
+      <p><strong>Slug:</strong> {{ business.slug }}</p>
+      <p><strong>Email:</strong> {{ business.email || '-' }}</p>
+      <p><strong>Teléfono:</strong> {{ business.phone || '-' }}</p>
+      <p><strong>Estado:</strong> {{ business.status }}</p>
+      <p><strong>Zona horaria:</strong> {{ business.timezone }}</p>
+      <p><strong>Moneda:</strong> {{ business.currency }}</p>
+    </div>
+
+    <div class="actions">
+      <a class="action-link" [routerLink]="['/businesses', business.id, 'employees']">
+        Gestionar empleados
+      </a>
+      <a class="action-link" [routerLink]="['/businesses', business.id, 'services']">
+        Gestionar servicios
+      </a>
+      <a class="action-link" [routerLink]="['/businesses', business.id, 'promotions']">
+        Gestionar promociones
+      </a>
+      <a class="action-link" [routerLink]="['/businesses', business.id, 'opening-hours']">
+        Horario negocio
+      </a>
+      <a class="action-link" [routerLink]="['/businesses', business.id, 'blockouts']">
+        Bloqueos
+      </a>
+      <a class="action-link" [routerLink]="['/businesses', business.id, 'appointments']">
+        Citas
+      </a>
+      <a class="action-link" [routerLink]="['/businesses', business.id, 'appointments', 'new']">
+        Nueva cita
+      </a>
+      <a class="action-link secondary" [routerLink]="['/book', business.slug]">
+        Ver reserva pública
+      </a>
+    </div>
+  </ng-container>
+</section>

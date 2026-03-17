@@ -1,0 +1,95 @@
+<div class="public-businesses-page">
+  <div class="container">
+    <header class="hero">
+      <p class="eyebrow">Directorio público</p>
+      <h1>Elige un negocio y reserva online</h1>
+      <p class="subtitle">
+        Busca negocios activos y entra directamente a su flujo de reserva.
+      </p>
+    </header>
+
+    <section class="search-card">
+      <div class="search-row">
+        <input
+          type="text"
+          [(ngModel)]="search"
+          placeholder="Buscar por nombre, slug o ciudad"
+          (keydown.enter)="submitSearch()"
+        />
+        <button type="button" (click)="submitSearch()">Buscar</button>
+        <button type="button" class="secondary" (click)="clearSearch()">
+          Limpiar
+        </button>
+      </div>
+    </section>
+
+    <div class="feedback error" *ngIf="errorMessage">
+      {{ errorMessage }}
+    </div>
+
+    <div class="loading-state" *ngIf="isLoading">
+      Cargando negocios...
+    </div>
+
+    <section class="grid" *ngIf="!isLoading">
+      <article
+        class="business-card"
+        *ngFor="let business of businesses; trackBy: trackByBusiness"
+      >
+        <div
+          class="business-topbar"
+          [style.background]="getBusinessAccentColor(business)"
+        ></div>
+
+        <div class="business-body">
+          <div class="logo-placeholder" *ngIf="!business.logoUrl">
+            {{ business.name.slice(0, 1).toUpperCase() }}
+          </div>
+
+          <img
+            *ngIf="business.logoUrl"
+            [src]="business.logoUrl"
+            [alt]="business.name"
+            class="business-logo"
+          />
+
+          <h2>{{ business.name }}</h2>
+
+          <p class="location" *ngIf="business.city || business.country">
+            {{ business.city || 'Sin ciudad' }}
+            <span *ngIf="business.city && business.country"> · </span>
+            {{ business.country || '' }}
+          </p>
+
+          <p class="description" *ngIf="business.description; else noDescription">
+            {{ business.description }}
+          </p>
+
+          <ng-template #noDescription>
+            <p class="description muted">
+              Este negocio ya tiene disponible la reserva online pública.
+            </p>
+          </ng-template>
+
+          <div class="meta">
+            <span *ngIf="business.phone">{{ business.phone }}</span>
+            <span *ngIf="business.email">{{ business.email }}</span>
+          </div>
+
+          <div class="actions">
+            <a [routerLink]="['/book', business.slug]" class="primary-link">
+              Reservar
+            </a>
+            <button type="button" class="secondary-button" (click)="openBusiness(business.slug)">
+              Ver reserva
+            </button>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <div class="empty-state" *ngIf="!isLoading && businesses.length === 0">
+      No hay negocios activos que coincidan con la búsqueda.
+    </div>
+  </div>
+</div>

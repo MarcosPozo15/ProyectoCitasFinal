@@ -1,0 +1,45 @@
+<section class="page">
+  <div class="page-header">
+    <div>
+      <h1>Promociones</h1>
+      <div class="header-links">
+        <a class="secondary-link" routerLink="/my-business">Volver a mi negocio</a>
+        <a class="secondary-link" [routerLink]="['/businesses', businessId, 'services']">
+          Ver servicios
+        </a>
+      </div>
+    </div>
+
+    <a class="primary-link" [routerLink]="['/businesses', businessId, 'promotions', 'new']">
+      Nueva promoción
+    </a>
+  </div>
+
+  <p *ngIf="isLoading">Cargando...</p>
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+  <div class="empty-state" *ngIf="!isLoading && !errorMessage && items.length === 0">
+    Todavía no hay promociones creadas para este negocio.
+  </div>
+
+  <div class="grid" *ngIf="!isLoading && !errorMessage && items.length > 0">
+    <article class="card" *ngFor="let item of items; trackBy: trackByPromotion">
+      <div class="promo-top">
+        <h2>{{ item.name }}</h2>
+        <span class="badge" [class.inactive]="!item.isActive">
+          {{ item.isActive ? 'Activa' : 'Inactiva' }}
+        </span>
+      </div>
+
+      <p><strong>Tipo:</strong> {{ item.type }}</p>
+      <p><strong>Valor:</strong> {{ formatPromotionValue(item) }}</p>
+      <p><strong>Servicio:</strong> {{ item.service?.name || 'General' }}</p>
+      <p><strong>Inicio:</strong> {{ formatDate(item.startsAt) }}</p>
+      <p><strong>Fin:</strong> {{ formatDate(item.endsAt) }}</p>
+
+      <p *ngIf="item.description">
+        <strong>Descripción:</strong> {{ item.description }}
+      </p>
+    </article>
+  </div>
+</section>

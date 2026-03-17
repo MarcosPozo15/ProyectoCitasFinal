@@ -1,0 +1,210 @@
+<div class="public-booking-page">
+  <div class="container" *ngIf="!isLoading; else loadingTpl">
+    <header class="hero" *ngIf="business as currentBusiness">
+      <div>
+        <p class="eyebrow">Reserva online</p>
+        <h1>{{ currentBusiness.name }}</h1>
+        <p class="subtitle">
+          Elige si quieres reservar con el formulario clásico o dejarte guiar por el asistente.
+        </p>
+      </div>
+    </header>
+
+    <section class="promotions-card" *ngIf="getVisiblePromotions().length > 0">
+      <div class="promotions-header">
+        <h2>Promociones activas</h2>
+        <p>
+          Estas promociones están vigentes ahora mismo para este negocio o para el servicio seleccionado.
+        </p>
+      </div>
+
+      <div class="promotions-list">
+        <article
+          class="promotion-item"
+          *ngFor="let promo of getVisiblePromotions()"
+        >
+          <div class="promotion-badge">
+            {{ formatPromotionValue(promo) }}
+          </div>
+
+          <div class="promotion-content">
+            <strong>{{ promo.name }}</strong>
+
+            <p *ngIf="promo.description">{{ promo.description }}</p>
+
+            <small *ngIf="promo.service">
+              Válida para: {{ promo.service.name }}
+            </small>
+
+            <small *ngIf="!promo.service">
+              Válida para cualquier servicio
+            </small>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <div class="feedback error" *ngIf="errorMessage">
+      {{ errorMessage }}
+    </div>
+
+    <div class="feedback success" *ngIf="successMessage">
+      {{ successMessage }}
+    </div>
+
+    <section class="grid">
+      <article class="card chat-card">
+        <div class="card-header">
+          <div>
+            <h2>Asistente de reservas</h2>
+            <p>
+              Provider activo:
+              <strong>{{ chatProvider || 'mock' }}</strong>
+            </p>
+          </div>
+        </div>
+
+        <div class="chat-box">
+          <div
+            *ngFor="let message of chatMessages"
+            class="chat-message"
+            [class.user]="message.role === 'user'"
+            [class.assistant]="message.role === 'assistant'"
+          >
+            <div class="bubble">
+              <pre>{{ message.content }}</pre>
+            </div>
+          </div>
+
+          <div class="chat-loading" *ngIf="isChatLoading">
+            El asistente está pensando...
+          </div>
+        </div>
+
+        <div class="quick-replies" *ngIf="chatQuickReplies.length > 0">
+          <button
+            type="button"
+            *ngFor="let reply of chatQuickReplies"
+            (click)="useQuickReply(reply.value)"
+          >
+            {{ reply.label }}
+          </button>
+        </div>
+
+        <div class="chat-input-row">
+          <input
+            type="text"
+            [(ngModel)]="chatInput"
+            placeholder="Ejemplo: quiero corte con Ana mañana"
+            (keydown.enter)="sendChatFromInput()"
+          />
+          <button
+            type="button"
+            (click)="sendChatFromInput()"
+            [disabled]="isChatLoading"
+          >
+            Enviar
+          </button>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-header">
+          <div>
+            <h2>Reserva manual</h2>
+            <p>El chat puede ir completando este formulario automáticamente.</p>
+          </div>
+        </div>
+
+        <form [formGroup]="form" (ngSubmit)="submit()" class="booking-form">
+          <label>
+            <span>Empleado</span>
+            <select formControlName="employeeId">
+              <option value="">Selecciona un empleado</option>
+              <option *ngFor="let employee of employees" [value]="employee.id">
+                {{ employee.firstName }} {{ employee.lastName }}
+              </option>
+            </select>
+          </label>
+
+          <label>
+            <span>Servicio</span>
+            <select formControlName="serviceId">
+              <option value="">Selecciona un servicio</option>
+              <option *ngFor="let service of services" [value]="service.id">
+                {{ service.name }} · {{ service.durationMinutes }} min
+              </option>
+            </select>
+          </label>
+
+          <label>
+            <span>Fecha</span>
+            <input type="date" formControlName="date" />
+          </label>
+
+          <div class="actions-row">
+            <button
+              type="button"
+              (click)="searchAvailability()"
+              [disabled]="isSearching"
+            >
+              {{ isSearching ? 'Buscando...' : 'Buscar disponibilidad' }}
+            </button>
+          </div>
+
+          <div class="slots" *ngIf="slots.length > 0">
+            <p class="section-title">Huecos disponibles</p>
+            <button
+              type="button"
+              class="slot-button"
+              *ngFor="let slot of slots; trackBy: trackBySlot"
+              (click)="chooseSlot(slot)"
+            >
+              {{ formatSlotLabel(slot) }}
+            </button>
+          </div>
+
+          <label>
+            <span>Inicio seleccionado</span>
+            <input type="text" formControlName="startsAt" readonly />
+          </label>
+
+          <label>
+            <span>Nombre</span>
+            <input type="text" formControlName="customerFirstName" />
+          </label>
+
+          <label>
+            <span>Apellidos</span>
+            <input type="text" formControlName="customerLastName" />
+          </label>
+
+          <label>
+            <span>Email</span>
+            <input type="email" formControlName="customerEmail" />
+          </label>
+
+          <label>
+            <span>Teléfono</span>
+            <input type="text" formControlName="customerPhone" />
+          </label>
+
+          <label>
+            <span>Notas</span>
+            <textarea rows="4" formControlName="customerNotes"></textarea>
+          </label>
+
+          <div class="actions-row">
+            <button type="submit" [disabled]="isSubmitting">
+              {{ isSubmitting ? 'Reservando...' : 'Confirmar reserva' }}
+            </button>
+          </div>
+        </form>
+      </article>
+    </section>
+  </div>
+</div>
+
+<ng-template #loadingTpl>
+  <div class="loading-state">Cargando reserva pública...</div>
+</ng-template>

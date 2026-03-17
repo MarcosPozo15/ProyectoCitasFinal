@@ -1,0 +1,32 @@
+<section class="page">
+  <div class="page-header">
+    <div>
+      <h1>Servicios asignados</h1>
+      <p class="subtitle" *ngIf="employeeName">Empleado: {{ employeeName }}</p>
+      <a class="back-link" [routerLink]="['/businesses', businessId, 'employees']">
+        ← Volver a empleados
+      </a>
+    </div>
+
+    <a
+      class="primary-link"
+      [routerLink]="['/businesses', businessId, 'employees', employeeId, 'services', 'new']"
+    >
+      Asignar servicio
+    </a>
+  </div>
+
+  <p *ngIf="isLoading">Cargando...</p>
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+  <div class="grid" *ngIf="!isLoading && !errorMessage">
+    <article class="card" *ngFor="let item of items">
+      <h2>{{ item.service.name }}</h2>
+      <p><strong>Slug:</strong> {{ item.service.slug }}</p>
+      <p><strong>Duración base:</strong> {{ item.service.durationMinutes }} min</p>
+      <p><strong>Precio base:</strong> {{ item.service.price }}</p>
+      <p><strong>Duración personalizada:</strong> {{ item.customDurationMin ?? '-' }}</p>
+      <p><strong>Precio personalizado:</strong> {{ item.customPrice ?? '-' }}</p>
+    </article>
+  </div>
+</section>

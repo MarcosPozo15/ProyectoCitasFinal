@@ -1,0 +1,432 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PlatformRole {
+  SUPERADMIN
+  BUSINESS_ADMIN
+  EMPLOYEE
+}
+
+enum BusinessStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING
+  DISABLED
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  VACATION
+  BLOCKED
+}
+
+enum CustomerStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum ServiceStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED_BY_BUSINESS
+  CANCELLED_BY_CUSTOMER
+  NO_SHOW
+}
+
+enum AppointmentSource {
+  WEB
+  APP
+  WHATSAPP
+  MANUAL
+}
+enum PromotionType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+enum Weekday {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum BlockoutTargetType {
+  BUSINESS
+  EMPLOYEE
+}
+enum WaitlistStatus {
+  ACTIVE
+  MATCHED
+  CONVERTED
+  CANCELLED
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  role         PlatformRole
+  isActive     Boolean      @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  businessAdmins Business[] @relation("BusinessAdminUser")
+  employee       Employee?
+
+  @@index([role])
+  @@map("users")
+}
+
+model Business {
+  id                        String         @id @default(cuid())
+  name                      String
+  slug                      String         @unique
+  legalName                 String?
+  taxId                     String?
+  email                     String?
+  phone                     String?
+  website                   String?
+  description               String?
+  logoUrl                   String?
+  primaryColor              String?
+  secondaryColor            String?
+  status                    BusinessStatus @default(PENDING)
+  timezone                  String         @default("Europe/Madrid")
+  currency                  String         @default("EUR")
+  bookingCancellationHours  Int            @default(1)
+  allowCustomerCancellation Boolean        @default(true)
+  depositPercentage         Decimal        @db.Decimal(5, 2)
+  addressLine1              String?
+  addressLine2              String?
+  city                      String?
+  postalCode                String?
+  country                   String?
+  adminUserId               String
+  createdAt                 DateTime       @default(now())
+  updatedAt                 DateTime       @updatedAt
+
+  adminUser       User                  @relation("BusinessAdminUser", fields: [adminUserId], references: [id], onDelete: Restrict)
+  employees       Employee[]
+  customers       Customer[]
+  services        Service[]
+  promotions      Promotion[]
+  servicePackages ServicePackage[]
+  appointments    Appointment[]
+  openingHours    BusinessOpeningHour[]
+  blockouts       Blockout[]
+
+  @@index([adminUserId])
+  @@index([status])
+  @@map("businesses")
+  waitlistEntries  WaitlistEntry[]
+}
+
+model Employee {
+  id         String         @id @default(cuid())
+  businessId String
+  userId     String?        @unique
+  firstName  String
+  lastName   String
+  email      String?
+  phone      String?
+  jobTitle   String?
+  bio        String?
+  colorHex   String?
+  status     EmployeeStatus @default(ACTIVE)
+  isBookable Boolean        @default(true)
+  hireDate   DateTime?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  business         Business              @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user             User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+  employeeServices EmployeeService[]
+  appointments     Appointment[]
+  openingHours     EmployeeOpeningHour[]
+  blockouts        Blockout[]
+
+  @@index([businessId])
+  @@index([status])
+  @@map("employees")
+  waitlistEntries  WaitlistEntry[]
+}
+
+model Service {
+  id                String        @id @default(cuid())
+  businessId        String
+  name              String
+  slug              String
+  description       String?
+  durationMinutes   Int
+  price             Decimal       @db.Decimal(10, 2)
+  isCombo           Boolean       @default(false)
+  status            ServiceStatus @default(ACTIVE)
+  requiresDeposit   Boolean       @default(false)
+  depositPercentage Decimal?      @db.Decimal(5, 2)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  business         Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  employeeServices EmployeeService[]
+  packageItems     ServicePackageItem[] @relation("PackageItemService")
+  appointments     Appointment[]
+  promotions      Promotion[]
+
+  @@unique([businessId, slug])
+  @@index([businessId])
+  @@index([status])
+  @@map("services")
+  waitlistEntries  WaitlistEntry[]
+}
+
+model EmployeeService {
+  id                String   @id @default(cuid())
+  employeeId        String
+  serviceId         String
+  customDurationMin Int?
+  customPrice       Decimal? @db.Decimal(10, 2)
+  createdAt         DateTime @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  service  Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, serviceId])
+  @@index([serviceId])
+  @@map("employee_services")
+}
+
+model ServicePackage {
+  id               String   @id @default(cuid())
+  businessId       String
+  name             String
+  slug             String
+  description      String?
+  totalDurationMin Int
+  totalPrice       Decimal  @db.Decimal(10, 2)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  business Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  items    ServicePackageItem[]
+
+  @@unique([businessId, slug])
+  @@index([businessId])
+  @@map("service_packages")
+}
+
+model ServicePackageItem {
+  id               String   @id @default(cuid())
+  servicePackageId String
+  serviceId        String
+  sortOrder        Int      @default(0)
+  durationMinutes  Int
+  price            Decimal  @db.Decimal(10, 2)
+  createdAt        DateTime @default(now())
+
+  servicePackage ServicePackage @relation(fields: [servicePackageId], references: [id], onDelete: Cascade)
+  service        Service        @relation("PackageItemService", fields: [serviceId], references: [id], onDelete: Restrict)
+
+  @@unique([servicePackageId, serviceId])
+  @@index([serviceId])
+  @@map("service_package_items")
+}
+
+model Customer {
+  id                String             @id @default(cuid())
+  businessId        String
+  firstName         String
+  lastName          String
+  email             String?
+  phone             String?
+  notes             String?
+  preferredChannel  AppointmentSource?
+  marketingConsent  Boolean            @default(false)
+  gdprConsentAt     DateTime?
+  status            CustomerStatus     @default(ACTIVE)
+  noShowCount       Int                @default(0)
+  cancellationCount Int                @default(0)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@index([businessId])
+  @@index([email])
+  @@index([phone])
+  @@index([status])
+  @@map("customers")
+}
+
+model Appointment {
+  id                 String            @id @default(cuid())
+  businessId         String
+  customerId         String
+  employeeId         String
+  serviceId          String
+  status             AppointmentStatus @default(CONFIRMED)
+  source             AppointmentSource @default(WEB)
+  startsAt           DateTime
+  endsAt             DateTime
+  customerNotes      String?
+  internalNotes      String?
+  depositRequired    Boolean           @default(false)
+  depositPercentage  Decimal?          @db.Decimal(5, 2)
+  depositAmount      Decimal?          @db.Decimal(10, 2)
+  cancellationReason String?
+  cancelledAt        DateTime?
+  confirmedAt        DateTime?
+  completedAt        DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  service  Service  @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+
+  @@index([businessId])
+  @@index([customerId])
+  @@index([employeeId])
+  @@index([serviceId])
+  @@index([status])
+  @@index([startsAt, endsAt])
+  @@map("appointments")
+}
+
+model BusinessOpeningHour {
+  id         String   @id @default(cuid())
+  businessId String
+  weekday    Weekday
+  isOpen     Boolean  @default(true)
+  startTime  String
+  endTime    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, weekday])
+  @@index([businessId])
+  @@map("business_opening_hours")
+}
+
+model EmployeeOpeningHour {
+  id         String   @id @default(cuid())
+  businessId String
+  employeeId String
+  weekday    Weekday
+  isWorking  Boolean  @default(true)
+  startTime  String
+  endTime    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, weekday])
+  @@index([businessId])
+  @@index([employeeId])
+  @@map("employee_opening_hours")
+}
+
+model Blockout {
+  id          String             @id @default(cuid())
+  businessId  String
+  employeeId  String?
+  targetType  BlockoutTargetType
+  title       String
+  description String?
+  startsAt    DateTime
+  endsAt      DateTime
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  business Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  employee Employee? @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([employeeId])
+  @@index([targetType])
+  @@index([startsAt, endsAt])
+  @@map("blockouts")
+}
+model WaitlistEntry {
+  id                String             @id @default(cuid())
+  businessId        String
+  serviceId         String
+  employeeId        String?
+  status            WaitlistStatus     @default(ACTIVE)
+  preferredDate     DateTime
+  timeFrom          String?
+  timeTo            String?
+  customerFirstName String
+  customerLastName  String
+  customerEmail     String?
+  customerPhone     String?
+  notes             String?
+  source            AppointmentSource  @default(WEB)
+  matchedAt         DateTime?
+  convertedAt       DateTime?
+  cancelledAt       DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  business Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  service  Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  employee Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  @@index([businessId])
+  @@index([serviceId])
+  @@index([employeeId])
+  @@index([status])
+  @@index([preferredDate])
+  @@index([createdAt])
+  @@map("waitlist_entries")
+}
+
+model Promotion {
+  id               String         @id @default(cuid())
+  businessId       String
+  serviceId        String?
+  name             String
+  description      String?
+  type             PromotionType
+  value            Decimal        @db.Decimal(10, 2)
+  startsAt         DateTime
+  endsAt           DateTime
+  isActive         Boolean        @default(true)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  service  Service? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  @@index([businessId])
+  @@index([serviceId])
+  @@index([isActive])
+  @@index([startsAt, endsAt])
+  @@map("promotions")
+}

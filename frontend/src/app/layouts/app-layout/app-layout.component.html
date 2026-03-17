@@ -1,0 +1,24 @@
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">Citas SaaS</div>
+
+    <nav class="nav">
+      <a routerLink="/">Dashboard</a>
+
+      <ng-container *ngIf="session.isSuperadmin()">
+        <a routerLink="/admin/businesses">Negocios</a>
+        <a routerLink="/admin/businesses/new">Nuevo negocio</a>
+      </ng-container>
+
+      <ng-container *ngIf="session.isBusinessAdmin()">
+        <a routerLink="/my-business">Mi negocio</a>
+      </ng-container>
+    </nav>
+
+    <button class="logout" (click)="logout()">Cerrar sesión</button>
+  </aside>
+
+  <main class="content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

@@ -1,0 +1,49 @@
+<section class="page">
+  <div class="page-header">
+    <h1>Nuevo bloqueo</h1>
+    <a [routerLink]="['/businesses', businessId, 'blockouts']">Volver</a>
+  </div>
+
+  <form class="form-card" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="grid">
+      <div>
+        <label>Tipo</label>
+        <select formControlName="targetType">
+          <option value="BUSINESS">Negocio</option>
+          <option value="EMPLOYEE">Empleado</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Employee ID (solo si es EMPLOYEE)</label>
+        <input type="text" formControlName="employeeId" />
+      </div>
+
+      <div class="full">
+        <label>Título</label>
+        <input type="text" formControlName="title" />
+      </div>
+
+      <div class="full">
+        <label>Descripción</label>
+        <textarea rows="4" formControlName="description"></textarea>
+      </div>
+
+      <div>
+        <label>Inicio</label>
+        <input type="datetime-local" formControlName="startsAt" />
+      </div>
+
+      <div>
+        <label>Fin</label>
+        <input type="datetime-local" formControlName="endsAt" />
+      </div>
+    </div>
+
+    <button type="submit" [disabled]="isSubmitting">
+      {{ isSubmitting ? 'Guardando...' : 'Crear bloqueo' }}
+    </button>
+
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  </form>
+</section>

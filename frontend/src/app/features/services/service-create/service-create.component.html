@@ -1,0 +1,46 @@
+<section class="page">
+  <div class="page-header">
+    <h1>Nuevo servicio</h1>
+    <a [routerLink]="['/businesses', businessId, 'services']">Volver</a>
+  </div>
+
+  <form class="form-card" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="grid">
+      <div>
+        <label>Nombre</label>
+        <input type="text" formControlName="name" />
+      </div>
+
+      <div>
+        <label>Slug</label>
+        <input type="text" formControlName="slug" />
+      </div>
+
+      <div>
+        <label>Duración (min)</label>
+        <input type="number" formControlName="durationMinutes" />
+      </div>
+
+      <div>
+        <label>Precio</label>
+        <input type="number" formControlName="price" />
+      </div>
+
+      <div>
+        <label>Depósito %</label>
+        <input type="number" formControlName="depositPercentage" />
+      </div>
+
+      <div class="full">
+        <label>Descripción</label>
+        <textarea rows="4" formControlName="description"></textarea>
+      </div>
+    </div>
+
+    <button type="submit" [disabled]="isSubmitting">
+      {{ isSubmitting ? 'Guardando...' : 'Crear servicio' }}
+    </button>
+
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  </form>
+</section>

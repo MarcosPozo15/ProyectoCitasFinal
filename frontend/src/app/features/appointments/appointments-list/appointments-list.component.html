@@ -1,0 +1,27 @@
+<section class="page">
+  <div class="page-header">
+    <div>
+      <h1>Citas</h1>
+      <a class="back-link" routerLink="/my-business">← Volver a mi negocio</a>
+    </div>
+
+    <a class="primary-link" [routerLink]="['/businesses', businessId, 'appointments', 'new']">
+      Nueva cita
+    </a>
+  </div>
+
+  <p *ngIf="isLoading">Cargando...</p>
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+  <div class="grid" *ngIf="!isLoading && !errorMessage">
+    <article class="card" *ngFor="let item of items">
+      <h2>{{ item.customer.firstName }} {{ item.customer.lastName }}</h2>
+      <p><strong>Servicio:</strong> {{ item.service.name }}</p>
+      <p><strong>Empleado:</strong> {{ item.employee.firstName }} {{ item.employee.lastName }}</p>
+      <p><strong>Inicio:</strong> {{ item.startsAt }}</p>
+      <p><strong>Fin:</strong> {{ item.endsAt }}</p>
+      <p><strong>Estado:</strong> {{ item.status }}</p>
+      <p><strong>Canal:</strong> {{ item.source }}</p>
+    </article>
+  </div>
+</section>

@@ -1,0 +1,53 @@
+.page h1 {
+  margin-top: 0;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card {
+  margin-top: 16px;
+  background: white;
+  padding: 24px;
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 120px 120px 140px 140px;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.weekday {
+  font-weight: 600;
+}
+
+input[type='time'] {
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+button {
+  margin-top: 16px;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: #111827;
+  color: white;
+  cursor: pointer;
+}
+
+.success {
+  color: #166534;
+}
+
+.error {
+  color: #b91c1c;
+}
