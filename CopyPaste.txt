@@ -1,0 +1,1494 @@
+Codigo del backend:
+
+backend/src/employees/employees.controller.ts:
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { PlatformRole } from '@prisma/client';
+import { Roles } from '../common/decorators/roles.decorator';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { CreateEmployeeDto } from './dto/create-employee.dto';
+import { ListEmployeesQueryDto } from './dto/list-employees-query.dto';
+import { EmployeesService } from './employees.service';
+
+@Controller('businesses/:businessId/employees')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class EmployeesController {
+  constructor(private readonly employeesService: EmployeesService) {}
+
+  @Post()
+  @Roles(PlatformRole.SUPERADMIN, PlatformRole.BUSINESS_ADMIN)
+  async createEmployee(
+    @Param('businessId') businessId: string,
+    @Body() dto: CreateEmployeeDto,
+  ) {
+    return this.employeesService.createEmployee(businessId, dto);
+  }
+
+  @Get()
+  @Roles(PlatformRole.SUPERADMIN, PlatformRole.BUSINESS_ADMIN)
+  async listEmployees(
+    @Param('businessId') businessId: string,
+    @Query() query: ListEmployeesQueryDto,
+  ) {
+    return this.employeesService.listEmployees(businessId, query);
+  }
+}
+
+backend/src/employees/employees.service.ts:
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
+import { CreateEmployeeDto } from './dto/create-employee.dto';
+import { ListEmployeesQueryDto } from './dto/list-employees-query.dto';
+
+@Injectable()
+export class EmployeesService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async createEmployee(businessId: string, dto: CreateEmployeeDto) {
+    const business = await this.prisma.business.findUnique({
+      where: { id: businessId },
+      select: { id: true, name: true },
+    });
+
+    if (!business) {
+      throw new NotFoundException('Negocio no encontrado');
+    }
+
+    const employee = await this.prisma.employee.create({
+      data: {
+        businessId,
+        firstName: dto.firstName.trim(),
+        lastName: dto.lastName.trim(),
+        email: dto.email?.toLowerCase().trim(),
+        phone: dto.phone?.trim(),
+        jobTitle: dto.jobTitle?.trim(),
+        bio: dto.bio?.trim(),
+        colorHex: dto.colorHex,
+        isBookable: dto.isBookable ?? true,
+      },
+      include: {
+        business: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    });
+
+    return employee;
+  }
+
+  async listEmployees(businessId: string, query: ListEmployeesQueryDto) {
+    const business = await this.prisma.business.findUnique({
+      where: { id: businessId },
+      select: { id: true },
+    });
+
+    if (!business) {
+      throw new NotFoundException('Negocio no encontrado');
+    }
+
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const skip = (page - 1) * limit;
+    const search = query.search?.trim();
+
+    const where = {
+      businessId,
+      ...(search
+        ? {
+            OR: [
+              { firstName: { contains: search, mode: 'insensitive' as const } },
+              { lastName: { contains: search, mode: 'insensitive' as const } },
+              { email: { contains: search, mode: 'insensitive' as const } },
+              { phone: { contains: search, mode: 'insensitive' as const } },
+              { jobTitle: { contains: search, mode: 'insensitive' as const } },
+            ],
+          }
+        : {}),
+    };
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.employee.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      this.prisma.employee.count({ where }),
+    ]);
+
+    return {
+      items,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+}
+
+backend/src/services/services.controller.ts:
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { PlatformRole } from '@prisma/client';
+import { Roles } from '../common/decorators/roles.decorator';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { CreateServiceDto } from './dto/create-service.dto';
+import { ListServicesQueryDto } from './dto/list-services-query.dto';
+import { ServicesService } from './services.service';
+
+@Controller('businesses/:businessId/services')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class ServicesController {
+  constructor(private readonly servicesService: ServicesService) {}
+
+  @Post()
+  @Roles(PlatformRole.SUPERADMIN, PlatformRole.BUSINESS_ADMIN)
+  async createService(
+    @Param('businessId') businessId: string,
+    @Body() dto: CreateServiceDto,
+  ) {
+    return this.servicesService.createService(businessId, dto);
+  }
+
+  @Get()
+  @Roles(PlatformRole.SUPERADMIN, PlatformRole.BUSINESS_ADMIN)
+  async listServices(
+    @Param('businessId') businessId: string,
+    @Query() query: ListServicesQueryDto,
+  ) {
+    return this.servicesService.listServices(businessId, query);
+  }
+}
+backend/src/services/services.service.ts:
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Prisma, ServiceStatus } from '@prisma/client';
+import { PrismaService } from '../../prisma/prisma.service';
+import { CreateServiceDto } from './dto/create-service.dto';
+import { ListServicesQueryDto } from './dto/list-services-query.dto';
+
+@Injectable()
+export class ServicesService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async createService(businessId: string, dto: CreateServiceDto) {
+    const business = await this.prisma.business.findUnique({
+      where: { id: businessId },
+      select: { id: true, name: true },
+    });
+
+    if (!business) {
+      throw new NotFoundException('Negocio no encontrado');
+    }
+
+    const normalizedSlug = dto.slug.toLowerCase().trim();
+
+    const existingService = await this.prisma.service.findFirst({
+      where: {
+        businessId,
+        slug: normalizedSlug,
+      },
+      select: { id: true },
+    });
+
+    if (existingService) {
+      throw new ConflictException('Ya existe un servicio con ese slug');
+    }
+
+    if (dto.requiresDeposit && dto.depositPercentage === undefined) {
+      throw new ConflictException(
+        'Si el servicio requiere depósito, debes indicar depositPercentage',
+      );
+    }
+
+    const service = await this.prisma.service.create({
+      data: {
+        businessId,
+        name: dto.name.trim(),
+        slug: normalizedSlug,
+        description: dto.description?.trim(),
+        durationMinutes: dto.durationMinutes,
+        price: new Prisma.Decimal(dto.price),
+        isCombo: dto.isCombo ?? false,
+        status: ServiceStatus.ACTIVE,
+        requiresDeposit: dto.requiresDeposit ?? false,
+        depositPercentage:
+          dto.depositPercentage !== undefined
+            ? new Prisma.Decimal(dto.depositPercentage)
+            : null,
+      },
+    });
+
+    return service;
+  }
+
+  async listServices(businessId: string, query: ListServicesQueryDto) {
+    const business = await this.prisma.business.findUnique({
+      where: { id: businessId },
+      select: { id: true },
+    });
+
+    if (!business) {
+      throw new NotFoundException('Negocio no encontrado');
+    }
+
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    const skip = (page - 1) * limit;
+    const search = query.search?.trim();
+
+    const where = {
+      businessId,
+      ...(search
+        ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' as const } },
+              { slug: { contains: search, mode: 'insensitive' as const } },
+              {
+                description: {
+                  contains: search,
+                  mode: 'insensitive' as const,
+                },
+              },
+            ],
+          }
+        : {}),
+    };
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.service.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      this.prisma.service.count({ where }),
+    ]);
+
+    return {
+      items,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+}
+backend/src/appointments/appointments.controller.ts:
+
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { PlatformRole } from '@prisma/client';
+import { Roles } from '../common/decorators/roles.decorator';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { AppointmentsService } from './appointments.service';
+import { CreateAppointmentDto } from './dto/create-appointment.dto';
+import { GetAvailabilityQueryDto } from './dto/get-availability-query.dto';
+import { ListAppointmentsQueryDto } from './dto/list-appointments-query.dto';
+
+@Controller('businesses/:businessId')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class AppointmentsController {
+  constructor(private readonly appointmentsService: AppointmentsService) {}
+
+  @Get('employees/:employeeId/availability')
+  @Roles(PlatformRole.SUPERADMIN, PlatformRole.BUSINESS_ADMIN)
+  async getAvailability(
+    @Param('businessId') businessId: string,
+    @Param('employeeId') employeeId: string,
+    @Query() query: GetAvailabilityQueryDto,
+  ) {
+    return this.appointmentsService.getAvailability(
+      businessId,
+      employeeId,
+      query,
+    );
+  }
+
+  @Post('appointments')
+  @Roles(PlatformRole.SUPERADMIN, PlatformRole.BUSINESS_ADMIN)
+  async createAppointment(
+    @Param('businessId') businessId: string,
+    @Body() dto: CreateAppointmentDto,
+  ) {
+    return this.appointmentsService.createAppointment(businessId, dto);
+  }
+
+  @Get('appointments')
+  @Roles(PlatformRole.SUPERADMIN, PlatformRole.BUSINESS_ADMIN)
+  async listAppointments(
+    @Param('businessId') businessId: string,
+    @Query() query: ListAppointmentsQueryDto,
+  ) {
+    return this.appointmentsService.listAppointments(businessId, query);
+  }
+}
+backend/src/promotions/promotions.controller.ts:
+
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { PlatformRole } from '@prisma/client';
+import { Roles } from '../common/decorators/roles.decorator';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { CreatePromotionDto } from './dto/create-promotion.dto';
+import { ListPromotionsQueryDto } from './dto/list-promotions-query.dto';
+import { PromotionsService } from './promotions.service';
+
+@Controller('businesses/:businessId/promotions')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class PromotionsController {
+  constructor(private readonly promotionsService: PromotionsService) {}
+
+  @Post()
+  @Roles(PlatformRole.SUPERADMIN, PlatformRole.BUSINESS_ADMIN)
+  async createPromotion(
+    @Param('businessId') businessId: string,
+    @Body() dto: CreatePromotionDto,
+  ) {
+    return this.promotionsService.createPromotion(businessId, dto);
+  }
+
+  @Get()
+  @Roles(PlatformRole.SUPERADMIN, PlatformRole.BUSINESS_ADMIN)
+  async listPromotions(
+    @Param('businessId') businessId: string,
+    @Query() query: ListPromotionsQueryDto,
+  ) {
+    return this.promotionsService.listPromotions(businessId, query);
+  }
+}
+backend/src/promotions/promotions.service.ts:
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Prisma, PromotionType } from '@prisma/client';
+import { PrismaService } from '../../prisma/prisma.service';
+import { CreatePromotionDto } from './dto/create-promotion.dto';
+import { ListPromotionsQueryDto } from './dto/list-promotions-query.dto';
+
+@Injectable()
+export class PromotionsService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  private async assertBusinessExists(businessId: string) {
+    const business = await this.prisma.business.findUnique({
+      where: { id: businessId },
+      select: { id: true, status: true },
+    });
+
+    if (!business) {
+      throw new NotFoundException('Negocio no encontrado');
+    }
+
+    return business;
+  }
+
+  private async assertServiceInBusiness(
+    businessId: string,
+    serviceId?: string,
+  ) {
+    if (!serviceId) return null;
+
+    const service = await this.prisma.service.findFirst({
+      where: {
+        id: serviceId,
+        businessId,
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    if (!service) {
+      throw new NotFoundException('Servicio no encontrado en este negocio');
+    }
+
+    return service;
+  }
+
+  async createPromotion(businessId: string, dto: CreatePromotionDto) {
+    await this.assertBusinessExists(businessId);
+    await this.assertServiceInBusiness(businessId, dto.serviceId);
+
+    const startsAt = new Date(dto.startsAt);
+    const endsAt = new Date(dto.endsAt);
+
+    if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) {
+      throw new BadRequestException('Fechas inválidas');
+    }
+
+    if (endsAt <= startsAt) {
+      throw new BadRequestException('La fecha de fin debe ser posterior al inicio');
+    }
+
+    if (dto.type === PromotionType.PERCENTAGE && dto.value > 100) {
+      throw new BadRequestException(
+        'Una promo porcentual no puede ser mayor que 100',
+      );
+    }
+
+    return this.prisma.promotion.create({
+      data: {
+        businessId,
+        serviceId: dto.serviceId,
+        name: dto.name.trim(),
+        description: dto.description?.trim(),
+        type: dto.type,
+        value: new Prisma.Decimal(dto.value),
+        startsAt,
+        endsAt,
+        isActive: dto.isActive ?? true,
+      },
+      include: {
+        service: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+  }
+
+  async listPromotions(businessId: string, query: ListPromotionsQueryDto) {
+    await this.assertBusinessExists(businessId);
+
+    const now = new Date();
+    const activeOnly = query.activeOnly === 'true';
+
+    const where: Prisma.PromotionWhereInput = {
+      businessId,
+      ...(query.serviceId ? { serviceId: query.serviceId } : {}),
+      ...(activeOnly
+        ? {
+            isActive: true,
+            startsAt: { lte: now },
+            endsAt: { gte: now },
+          }
+        : {}),
+    };
+
+    const items = await this.prisma.promotion.findMany({
+      where,
+      orderBy: [{ startsAt: 'asc' }, { createdAt: 'desc' }],
+      include: {
+        service: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return {
+      items,
+      meta: {
+        total: items.length,
+      },
+    };
+  }
+
+  async listPublicActivePromotions(
+    businessId: string,
+    query: ListPromotionsQueryDto,
+  ) {
+    const business = await this.prisma.business.findUnique({
+      where: { id: businessId },
+      select: { id: true, status: true },
+    });
+
+    if (!business || business.status !== 'ACTIVE') {
+      throw new NotFoundException('Negocio no encontrado');
+    }
+
+    const now = new Date();
+
+    const items = await this.prisma.promotion.findMany({
+      where: {
+        businessId,
+        isActive: true,
+        startsAt: { lte: now },
+        endsAt: { gte: now },
+        ...(query.serviceId ? { serviceId: query.serviceId } : {}),
+      },
+      orderBy: [{ startsAt: 'asc' }, { createdAt: 'desc' }],
+      include: {
+        service: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return {
+      items,
+      meta: {
+        total: items.length,
+      },
+    };
+  }
+}
+
+backend/src/service-packages/service-packages.controller.ts:
+
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { PlatformRole } from '@prisma/client';
+import { Roles } from '../common/decorators/roles.decorator';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { AddServicePackageItemDto } from './dto/add-service-package-item.dto';
+import { CreateServicePackageDto } from './dto/create-service-package.dto';
+import { ListServicePackagesQueryDto } from './dto/list-service-packages-query.dto';
+import { ServicePackagesService } from './service-packages.service';
+
+@Controller('businesses/:businessId/service-packages')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class ServicePackagesController {
+  constructor(
+    private readonly servicePackagesService: ServicePackagesService,
+  ) {}
+
+  @Get()
+  @Roles(PlatformRole.SUPERADMIN, PlatformRole.BUSINESS_ADMIN)
+  async listPackages(
+    @Param('businessId') businessId: string,
+    @Query() query: ListServicePackagesQueryDto,
+  ) {
+    return this.servicePackagesService.listPackages(businessId, query);
+  }
+
+  @Post()
+  @Roles(PlatformRole.SUPERADMIN, PlatformRole.BUSINESS_ADMIN)
+  async createPackage(
+    @Param('businessId') businessId: string,
+    @Body() dto: CreateServicePackageDto,
+  ) {
+    return this.servicePackagesService.createPackage(businessId, dto);
+  }
+
+  @Get(':packageId')
+  @Roles(PlatformRole.SUPERADMIN, PlatformRole.BUSINESS_ADMIN)
+  async getPackageDetail(
+    @Param('businessId') businessId: string,
+    @Param('packageId') packageId: string,
+  ) {
+    return this.servicePackagesService.getPackageDetail(businessId, packageId);
+  }
+
+  @Post(':packageId/items')
+  @Roles(PlatformRole.SUPERADMIN, PlatformRole.BUSINESS_ADMIN)
+  async addItem(
+    @Param('businessId') businessId: string,
+    @Param('packageId') packageId: string,
+    @Body() dto: AddServicePackageItemDto,
+  ) {
+    return this.servicePackagesService.addItem(businessId, packageId, dto);
+  }
+
+  @Delete(':packageId/items/:itemId')
+  @Roles(PlatformRole.SUPERADMIN, PlatformRole.BUSINESS_ADMIN)
+  async removeItem(
+    @Param('businessId') businessId: string,
+    @Param('packageId') packageId: string,
+    @Param('itemId') itemId: string,
+  ) {
+    return this.servicePackagesService.removeItem(
+      businessId,
+      packageId,
+      itemId,
+    );
+  }
+}
+
+backend/src/service-packages/service-packages.service.ts:
+
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Prisma, ServiceStatus } from '@prisma/client';
+import { PrismaService } from '../../prisma/prisma.service';
+import { AddServicePackageItemDto } from './dto/add-service-package-item.dto';
+import { CreateServicePackageDto } from './dto/create-service-package.dto';
+import { ListServicePackagesQueryDto } from './dto/list-service-packages-query.dto';
+
+@Injectable()
+export class ServicePackagesService {
+  constructor(private readonly prisma: PrismaService) {}
+
+  private async assertBusinessExists(businessId: string) {
+    const business = await this.prisma.business.findUnique({
+      where: { id: businessId },
+      select: { id: true, status: true },
+    });
+
+    if (!business) {
+      throw new NotFoundException('Negocio no encontrado');
+    }
+
+    return business;
+  }
+
+  private async recalculateTotals(servicePackageId: string) {
+    const items = await this.prisma.servicePackageItem.findMany({
+      where: { servicePackageId },
+      select: {
+        durationMinutes: true,
+        price: true,
+      },
+    });
+
+    const totalDurationMin = items.reduce(
+      (acc, item) => acc + item.durationMinutes,
+      0,
+    );
+
+    const totalPrice = items.reduce(
+      (acc, item) => acc.add(item.price),
+      new Prisma.Decimal(0),
+    );
+
+    await this.prisma.servicePackage.update({
+      where: { id: servicePackageId },
+      data: {
+        totalDurationMin,
+        totalPrice,
+      },
+    });
+  }
+
+  async createPackage(businessId: string, dto: CreateServicePackageDto) {
+    await this.assertBusinessExists(businessId);
+
+    const normalizedSlug = dto.slug.toLowerCase().trim();
+
+    const existing = await this.prisma.servicePackage.findFirst({
+      where: {
+        businessId,
+        slug: normalizedSlug,
+      },
+      select: { id: true },
+    });
+
+    if (existing) {
+      throw new ConflictException('Ya existe un combo con ese slug');
+    }
+
+    return this.prisma.servicePackage.create({
+      data: {
+        businessId,
+        name: dto.name.trim(),
+        slug: normalizedSlug,
+        description: dto.description?.trim(),
+        totalDurationMin: 0,
+        totalPrice: new Prisma.Decimal(0),
+        isActive: dto.isActive ?? true,
+      },
+    });
+  }
+
+  async listPackages(
+    businessId: string,
+    query: ListServicePackagesQueryDto,
+  ) {
+    await this.assertBusinessExists(businessId);
+
+    const activeOnly = query.activeOnly === 'true';
+
+    const items = await this.prisma.servicePackage.findMany({
+      where: {
+        businessId,
+        ...(activeOnly ? { isActive: true } : {}),
+      },
+      orderBy: [{ createdAt: 'desc' }],
+      include: {
+        items: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            service: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                durationMinutes: true,
+                price: true,
+                status: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return {
+      items,
+      meta: {
+        total: items.length,
+      },
+    };
+  }
+
+  async getPackageDetail(businessId: string, packageId: string) {
+    await this.assertBusinessExists(businessId);
+
+    const item = await this.prisma.servicePackage.findFirst({
+      where: {
+        id: packageId,
+        businessId,
+      },
+      include: {
+        items: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            service: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                durationMinutes: true,
+                price: true,
+                status: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!item) {
+      throw new NotFoundException('Combo no encontrado');
+    }
+
+    return item;
+  }
+
+  async addItem(
+    businessId: string,
+    packageId: string,
+    dto: AddServicePackageItemDto,
+  ) {
+    const servicePackage = await this.prisma.servicePackage.findFirst({
+      where: {
+        id: packageId,
+        businessId,
+      },
+      select: { id: true },
+    });
+
+    if (!servicePackage) {
+      throw new NotFoundException('Combo no encontrado');
+    }
+
+    const service = await this.prisma.service.findFirst({
+      where: {
+        id: dto.serviceId,
+        businessId,
+        status: {
+          in: [ServiceStatus.ACTIVE, ServiceStatus.INACTIVE],
+        },
+      },
+      select: {
+        id: true,
+        durationMinutes: true,
+        price: true,
+      },
+    });
+
+    if (!service) {
+      throw new NotFoundException('Servicio no encontrado en este negocio');
+    }
+
+    const existing = await this.prisma.servicePackageItem.findFirst({
+      where: {
+        servicePackageId: packageId,
+        serviceId: dto.serviceId,
+      },
+      select: { id: true },
+    });
+
+    if (existing) {
+      throw new ConflictException('Ese servicio ya está añadido al combo');
+    }
+
+    const currentCount = await this.prisma.servicePackageItem.count({
+      where: { servicePackageId: packageId },
+    });
+
+    const created = await this.prisma.servicePackageItem.create({
+      data: {
+        servicePackageId: packageId,
+        serviceId: dto.serviceId,
+        sortOrder: dto.sortOrder ?? currentCount,
+        durationMinutes: service.durationMinutes,
+        price: service.price,
+      },
+      include: {
+        service: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            durationMinutes: true,
+            price: true,
+            status: true,
+          },
+        },
+      },
+    });
+
+    await this.recalculateTotals(packageId);
+
+    return created;
+  }
+
+  async removeItem(
+    businessId: string,
+    packageId: string,
+    itemId: string,
+  ) {
+    const existing = await this.prisma.servicePackageItem.findFirst({
+      where: {
+        id: itemId,
+        servicePackageId: packageId,
+        servicePackage: {
+          businessId,
+        },
+      },
+      select: {
+        id: true,
+        servicePackageId: true,
+      },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Elemento del combo no encontrado');
+    }
+
+    await this.prisma.servicePackageItem.delete({
+      where: { id: itemId },
+    });
+
+    await this.recalculateTotals(existing.servicePackageId);
+
+    return { success: true };
+  }
+
+  async listPublicPackages(
+    businessId: string,
+    query: ListServicePackagesQueryDto,
+  ) {
+    const business = await this.prisma.business.findUnique({
+      where: { id: businessId },
+      select: { id: true, status: true },
+    });
+
+    if (!business || business.status !== 'ACTIVE') {
+      throw new NotFoundException('Negocio no encontrado');
+    }
+
+    const items = await this.prisma.servicePackage.findMany({
+      where: {
+        businessId,
+        isActive: query.activeOnly === 'false' ? undefined : true,
+      },
+      orderBy: [{ createdAt: 'desc' }],
+      include: {
+        items: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            service: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                durationMinutes: true,
+                price: true,
+                status: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return {
+      items,
+      meta: {
+        total: items.length,
+      },
+    };
+  }
+}
+Código del Frontend:
+
+frontend/src/app/features/employees/employee-list/employee-list.component.ts:
+
+import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import {
+  BusinessesService,
+  Employee,
+} from '../../../core/services/businesses.service';
+
+@Component({
+  selector: 'app-employees-list',
+  standalone: true,
+  imports: [CommonModule, RouterLink],
+  templateUrl: './employees-list.component.html',
+  styleUrl: './employees-list.component.css',
+})
+export class EmployeesListComponent {
+  private readonly businessesService = inject(BusinessesService);
+  private readonly route = inject(ActivatedRoute);
+
+  businessId = '';
+  isLoading = true;
+  errorMessage = '';
+  items: Employee[] = [];
+
+  ngOnInit(): void {
+    this.businessId = this.route.snapshot.paramMap.get('businessId') ?? '';
+
+    if (!this.businessId) {
+      this.errorMessage = 'No se encontró el negocio';
+      this.isLoading = false;
+      return;
+    }
+
+    this.loadEmployees();
+  }
+
+  loadEmployees(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.businessesService.listEmployees(this.businessId).subscribe({
+      next: (response) => {
+        this.items = response.items;
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error cargando empleados:', error);
+        this.errorMessage = 'No se pudieron cargar los empleados';
+        this.isLoading = false;
+      },
+    });
+  }
+}
+
+frontend/src/app/features/employees/employee-list/employee-list.component.html:
+
+<section class="page">
+  <div class="page-header">
+    <div>
+      <h1>Empleados</h1>
+      <a class="back-link" routerLink="/businesses">← Volver a negocios</a>
+    </div>
+
+    <a class="primary-link" [routerLink]="['/businesses', businessId, 'employees', 'new']">
+      Nuevo empleado
+    </a>
+  </div>
+
+  <p *ngIf="isLoading">Cargando...</p>
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+  <div class="grid" *ngIf="!isLoading && !errorMessage">
+    <article class="card" *ngFor="let item of items">
+      <h2>{{ item.firstName }} {{ item.lastName }}</h2>
+      <p><strong>Email:</strong> {{ item.email || '-' }}</p>
+      <p><strong>Teléfono:</strong> {{ item.phone || '-' }}</p>
+      <p><strong>Puesto:</strong> {{ item.jobTitle || '-' }}</p>
+      <p><strong>Reservable:</strong> {{ item.isBookable ? 'Sí' : 'No' }}</p>
+
+      <div class="actions">
+        <a
+          class="secondary-link"
+          [routerLink]="['/businesses', businessId, 'employees', item.id, 'services']"
+        >
+          Servicios asignados
+        </a>
+
+        <a
+          class="secondary-link"
+          [routerLink]="['/businesses', businessId, 'employees', item.id, 'opening-hours']"
+        >
+          Horario
+        </a>
+      </div>
+    </article>
+  </div>
+</section>
+frontend/src/app/features/services/service-list/services-list.component.ts:
+import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import {
+  BusinessesService,
+  Service,
+} from '../../../core/services/businesses.service';
+
+@Component({
+  selector: 'app-services-list',
+  standalone: true,
+  imports: [CommonModule, RouterLink],
+  templateUrl: './services-list.component.html',
+  styleUrl: './services-list.component.css',
+})
+export class ServicesListComponent {
+  private readonly businessesService = inject(BusinessesService);
+  private readonly route = inject(ActivatedRoute);
+
+  businessId = '';
+  isLoading = true;
+  errorMessage = '';
+  items: Service[] = [];
+
+  ngOnInit(): void {
+    this.businessId = this.route.snapshot.paramMap.get('businessId') ?? '';
+
+    if (!this.businessId) {
+      this.errorMessage = 'No se encontró el negocio';
+      this.isLoading = false;
+      return;
+    }
+
+    this.loadServices();
+  }
+
+  loadServices(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.businessesService.listServices(this.businessId).subscribe({
+      next: (response) => {
+        this.items = response.items;
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error cargando servicios:', error);
+        this.errorMessage = 'No se pudieron cargar los servicios';
+        this.isLoading = false;
+      },
+    });
+  }
+}
+
+frontend/src/app/features/services/service-list/services-list.component.html:
+
+<section class="page">
+  <div class="page-header">
+    <div>
+      <h1>Servicios</h1>
+      <div class="header-links">
+        <a class="secondary-link" routerLink="/my-business">Volver a mi negocio</a>
+        <a class="secondary-link" [routerLink]="['/businesses', businessId, 'promotions']">
+          Ir a promociones
+        </a>
+      </div>
+    </div>
+
+    <a class="primary-link" [routerLink]="['/businesses', businessId, 'services', 'new']">
+      Nuevo servicio
+    </a>
+    <a class="secondary-link" [routerLink]="['/businesses', businessId, 'service-packages']">
+      Ir a combos
+    </a>
+  </div>
+
+  <p *ngIf="isLoading">Cargando...</p>
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+  <div class="grid" *ngIf="!isLoading && !errorMessage">
+    <article class="card" *ngFor="let item of items">
+      <h2>{{ item.name }}</h2>
+      <p><strong>Slug:</strong> {{ item.slug }}</p>
+      <p><strong>Duración:</strong> {{ item.durationMinutes }} min</p>
+      <p><strong>Precio:</strong> {{ item.price }}</p>
+      <p><strong>Estado:</strong> {{ item.status }}</p>
+      <p><strong>Depósito:</strong> {{ item.requiresDeposit ? 'Sí' : 'No' }}</p>
+    </article>
+  </div>
+</section>
+frontend/src/app/features/appointments/appointments-list/appointments-list.component.ts:
+
+import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Appointment, BusinessesService } from '../../../core/services/businesses.service';
+
+@Component({
+  selector: 'app-appointments-list',
+  standalone: true,
+  imports: [CommonModule, RouterLink],
+  templateUrl: './appointments-list.component.html',
+  styleUrl: './appointments-list.component.css',
+})
+export class AppointmentsListComponent {
+  private readonly route = inject(ActivatedRoute);
+  private readonly businessesService = inject(BusinessesService);
+
+  businessId = '';
+  isLoading = true;
+  errorMessage = '';
+  items: Appointment[] = [];
+
+  ngOnInit(): void {
+    this.businessId = this.route.snapshot.paramMap.get('businessId') ?? '';
+
+    if (!this.businessId) {
+      this.errorMessage = 'No se encontró el negocio';
+      this.isLoading = false;
+      return;
+    }
+
+    this.businessesService.listAppointments(this.businessId).subscribe({
+      next: (response) => {
+        this.items = response.items;
+        this.isLoading = false;
+      },
+      error: () => {
+        this.errorMessage = 'No se pudieron cargar las citas';
+        this.isLoading = false;
+      },
+    });
+  }
+}
+
+frontend/src/app/features/appointments/appointments-list/appointments-list.component.html:
+
+<section class="page">
+  <div class="page-header">
+    <div>
+      <h1>Citas</h1>
+      <a class="back-link" routerLink="/my-business">← Volver a mi negocio</a>
+    </div>
+
+    <a class="primary-link" [routerLink]="['/businesses', businessId, 'appointments', 'new']">
+      Nueva cita
+    </a>
+  </div>
+
+  <p *ngIf="isLoading">Cargando...</p>
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+  <div class="grid" *ngIf="!isLoading && !errorMessage">
+    <article class="card" *ngFor="let item of items">
+      <h2>{{ item.customer.firstName }} {{ item.customer.lastName }}</h2>
+      <p><strong>Servicio:</strong> {{ item.service.name }}</p>
+      <p><strong>Empleado:</strong> {{ item.employee.firstName }} {{ item.employee.lastName }}</p>
+      <p><strong>Inicio:</strong> {{ item.startsAt }}</p>
+      <p><strong>Fin:</strong> {{ item.endsAt }}</p>
+      <p><strong>Estado:</strong> {{ item.status }}</p>
+      <p><strong>Canal:</strong> {{ item.source }}</p>
+    </article>
+  </div>
+</section>
+
+frontend/src/app/features/promotions/promotions-list/promotions-list.component.ts:
+
+import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import {
+  BusinessesService,
+  Promotion,
+} from '../../../core/services/businesses.service';
+
+@Component({
+  selector: 'app-promotions-list',
+  standalone: true,
+  imports: [CommonModule, RouterLink],
+  templateUrl: './promotions-list.component.html',
+  styleUrl: './promotions-list.component.css',
+})
+export class PromotionsListComponent {
+  private readonly businessesService = inject(BusinessesService);
+  private readonly route = inject(ActivatedRoute);
+
+  businessId = '';
+  isLoading = true;
+  errorMessage = '';
+  items: Promotion[] = [];
+
+  ngOnInit(): void {
+    this.businessId = this.route.snapshot.paramMap.get('businessId') ?? '';
+
+    if (!this.businessId) {
+      this.errorMessage = 'No se encontró el negocio';
+      this.isLoading = false;
+      return;
+    }
+
+    this.loadPromotions();
+  }
+
+  loadPromotions(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.businessesService.listPromotions(this.businessId).subscribe({
+      next: (response) => {
+        this.items = response.items;
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error cargando promociones:', error);
+        this.errorMessage = 'No se pudieron cargar las promociones';
+        this.isLoading = false;
+      },
+    });
+  }
+
+  formatPromotionValue(item: Promotion): string {
+    if (item.type === 'PERCENTAGE') {
+      return `${item.value}%`;
+    }
+
+    return `${item.value}€`;
+  }
+
+  formatDate(value: string): string {
+    return new Date(value).toLocaleString();
+  }
+
+  trackByPromotion(index: number, item: Promotion): string {
+    return `${index}-${item.id}`;
+  }
+}
+
+frontend/src/app/features/promotions/promotions-list/promotions-list.component.html:
+
+
+<section class="page">
+  <div class="page-header">
+    <div>
+      <h1>Promociones</h1>
+      <div class="header-links">
+        <a class="secondary-link" routerLink="/my-business">Volver a mi negocio</a>
+        <a class="secondary-link" [routerLink]="['/businesses', businessId, 'services']">
+          Ver servicios
+        </a>
+      </div>
+    </div>
+
+    <a class="primary-link" [routerLink]="['/businesses', businessId, 'promotions', 'new']">
+      Nueva promoción
+    </a>
+  </div>
+
+  <p *ngIf="isLoading">Cargando...</p>
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+  <div class="empty-state" *ngIf="!isLoading && !errorMessage && items.length === 0">
+    Todavía no hay promociones creadas para este negocio.
+  </div>
+
+  <div class="grid" *ngIf="!isLoading && !errorMessage && items.length > 0">
+    <article class="card" *ngFor="let item of items; trackBy: trackByPromotion">
+      <div class="promo-top">
+        <h2>{{ item.name }}</h2>
+        <span class="badge" [class.inactive]="!item.isActive">
+          {{ item.isActive ? 'Activa' : 'Inactiva' }}
+        </span>
+      </div>
+
+      <p><strong>Tipo:</strong> {{ item.type }}</p>
+      <p><strong>Valor:</strong> {{ formatPromotionValue(item) }}</p>
+      <p><strong>Servicio:</strong> {{ item.service?.name || 'General' }}</p>
+      <p><strong>Inicio:</strong> {{ formatDate(item.startsAt) }}</p>
+      <p><strong>Fin:</strong> {{ formatDate(item.endsAt) }}</p>
+
+      <p *ngIf="item.description">
+        <strong>Descripción:</strong> {{ item.description }}
+      </p>
+    </article>
+  </div>
+</section>
+frontend/src/app/features/service-packages/service-packages-list/service-packages-list.component.ts:
+
+import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import {
+  BusinessesService,
+  ServicePackage,
+} from '../../../core/services/businesses.service';
+
+@Component({
+  selector: 'app-service-packages-list',
+  standalone: true,
+  imports: [CommonModule, RouterLink],
+  templateUrl: './service-packages-list.component.html',
+  styleUrl: './service-packages-list.component.css',
+})
+export class ServicePackagesListComponent {
+  private readonly businessesService = inject(BusinessesService);
+  private readonly route = inject(ActivatedRoute);
+
+  businessId = '';
+  isLoading = true;
+  errorMessage = '';
+  items: ServicePackage[] = [];
+
+  ngOnInit(): void {
+    this.businessId = this.route.snapshot.paramMap.get('businessId') ?? '';
+
+    if (!this.businessId) {
+      this.errorMessage = 'No se encontró el negocio';
+      this.isLoading = false;
+      return;
+    }
+
+    this.loadPackages();
+  }
+
+  loadPackages(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.businessesService.listServicePackages(this.businessId).subscribe({
+      next: (response) => {
+        this.items = response.items;
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error cargando combos:', error);
+        this.errorMessage = 'No se pudieron cargar los combos';
+        this.isLoading = false;
+      },
+    });
+  }
+
+  trackByPackage(index: number, item: ServicePackage): string {
+    return `${index}-${item.id}`;
+  }
+}
+
+frontend/src/app/features/service-packages/service-packages-list/service-packages-list.component.html:
+
+<section class="page">
+  <div class="page-header">
+    <div>
+      <h1>Combos / paquetes</h1>
+      <div class="header-links">
+        <a class="secondary-link" routerLink="/my-business">Volver a mi negocio</a>
+        <a class="secondary-link" [routerLink]="['/businesses', businessId, 'services']">
+          Ver servicios
+        </a>
+      </div>
+    </div>
+
+    <a
+      class="primary-link"
+      [routerLink]="['/businesses', businessId, 'service-packages', 'new']"
+    >
+      Nuevo combo
+    </a>
+  </div>
+
+  <p *ngIf="isLoading">Cargando...</p>
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+  <div class="empty-state" *ngIf="!isLoading && !errorMessage && items.length === 0">
+    Todavía no hay combos creados para este negocio.
+  </div>
+
+  <div class="grid" *ngIf="!isLoading && !errorMessage && items.length > 0">
+    <article class="card" *ngFor="let item of items; trackBy: trackByPackage">
+      <div class="package-top">
+        <h2>{{ item.name }}</h2>
+        <span class="badge" [class.inactive]="!item.isActive">
+          {{ item.isActive ? 'Activo' : 'Inactivo' }}
+        </span>
+      </div>
+
+      <p><strong>Slug:</strong> {{ item.slug }}</p>
+      <p><strong>Duración total:</strong> {{ item.totalDurationMin }} min</p>
+      <p><strong>Precio total:</strong> {{ item.totalPrice }}</p>
+      <p><strong>Servicios:</strong> {{ item.items?.length || 0 }}</p>
+
+      <p *ngIf="item.description">
+        <strong>Descripción:</strong> {{ item.description }}
+      </p>
+
+      <div class="card-actions">
+        <a
+          class="secondary-link"
+          [routerLink]="['/businesses', businessId, 'service-packages', item.id]"
+        >
+          Gestionar contenido
+        </a>
+      </div>
+    </article>
+  </div>
+</section>
+
+
+
+

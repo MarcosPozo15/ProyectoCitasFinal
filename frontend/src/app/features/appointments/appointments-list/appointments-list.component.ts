@@ -1,7 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Appointment, BusinessesService } from '../../../core/services/businesses.service';
+import {
+  Appointment,
+  BusinessesService,
+} from '../../../core/services/businesses.service';
 
 @Component({
   selector: 'app-appointments-list',
@@ -28,6 +31,13 @@ export class AppointmentsListComponent {
       return;
     }
 
+    this.loadAppointments();
+  }
+
+  loadAppointments(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
     this.businessesService.listAppointments(this.businessId).subscribe({
       next: (response) => {
         this.items = response.items;
@@ -38,5 +48,30 @@ export class AppointmentsListComponent {
         this.isLoading = false;
       },
     });
+  }
+
+  cancel(item: Appointment): void {
+    const reason =
+      window.prompt('Motivo de cancelación (opcional):') || undefined;
+
+    this.businessesService
+      .cancelAppointment(this.businessId, item.id, { reason })
+      .subscribe({
+        next: () => this.loadAppointments(),
+        error: (error) => {
+          console.error('Error cancelando cita:', error);
+          this.errorMessage =
+            error?.error?.message || 'No se pudo cancelar la cita';
+        },
+      });
+  }
+
+  canCancel(item: Appointment): boolean {
+    return ![
+      'CANCELLED_BY_BUSINESS',
+      'CANCELLED_BY_CUSTOMER',
+      'COMPLETED',
+      'NO_SHOW',
+    ].includes(item.status);
   }
 }

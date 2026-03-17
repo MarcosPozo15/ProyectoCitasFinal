@@ -1,0 +1,78 @@
+<section class="page">
+  <div class="page-header">
+    <div>
+      <h1>Gestionar combo</h1>
+      <div class="header-links">
+        <a class="secondary-link" [routerLink]="['/businesses', businessId, 'service-packages']">
+          Volver a combos
+        </a>
+        <a class="secondary-link" [routerLink]="['/businesses', businessId, 'services']">
+          Ver servicios
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <p *ngIf="isLoading">Cargando...</p>
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  <p class="success" *ngIf="successMessage">{{ successMessage }}</p>
+
+  <ng-container *ngIf="!isLoading && packageItem">
+    <div class="card summary-card">
+      <h2>{{ packageItem.name }}</h2>
+      <p><strong>Slug:</strong> {{ packageItem.slug }}</p>
+      <p><strong>Duración total:</strong> {{ packageItem.totalDurationMin }} min</p>
+      <p><strong>Precio total:</strong> {{ packageItem.totalPrice }}</p>
+      <p><strong>Activo:</strong> {{ packageItem.isActive ? 'Sí' : 'No' }}</p>
+      <p *ngIf="packageItem.description">
+        <strong>Descripción:</strong> {{ packageItem.description }}
+      </p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" class="card form-grid">
+      <h3>Añadir servicio al combo</h3>
+
+      <label>
+        <span>Servicio</span>
+        <select formControlName="serviceId">
+          <option value="">Selecciona un servicio</option>
+          <option *ngFor="let service of services" [value]="service.id">
+            {{ service.name }} · {{ service.durationMinutes }} min · {{ service.price }}
+          </option>
+        </select>
+      </label>
+
+      <div class="actions-row">
+        <button type="submit" [disabled]="isSubmitting">
+          {{ isSubmitting ? 'Añadiendo...' : 'Añadir servicio' }}
+        </button>
+      </div>
+    </form>
+
+    <div class="card">
+      <h3>Servicios del combo</h3>
+
+      <div class="empty-state" *ngIf="(packageItem.items?.length || 0) === 0">
+        Todavía no has añadido servicios a este combo.
+      </div>
+
+      <div class="items-list" *ngIf="(packageItem.items?.length || 0) > 0">
+        <article
+          class="item-row"
+          *ngFor="let item of packageItem.items; trackBy: trackByItem"
+        >
+          <div>
+            <strong>{{ item.service.name }}</strong>
+            <p>
+              {{ item.durationMinutes }} min · {{ item.price }}
+            </p>
+          </div>
+
+          <button type="button" class="danger-button" (click)="removeItem(item.id)">
+            Quitar
+          </button>
+        </article>
+      </div>
+    </div>
+  </ng-container>
+</section>

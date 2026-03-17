@@ -44,6 +44,30 @@
       </div>
     </section>
 
+    <section class="promotions-card" *ngIf="packages.length > 0">
+      <div class="promotions-header">
+        <h2>Combos disponibles</h2>
+        <p>
+          Estos paquetes se muestran de forma informativa. La reserva directa del combo se activará en un bloque posterior.
+        </p>
+      </div>
+    
+      <div class="promotions-list">
+        <article class="promotion-item" *ngFor="let pkg of packages">
+          <div class="promotion-badge">
+            {{ pkg.totalDurationMin }} min
+          </div>
+    
+          <div class="promotion-content">
+            <strong>{{ pkg.name }}</strong>
+            <p *ngIf="pkg.description">{{ pkg.description }}</p>
+            <small>Precio total: {{ pkg.totalPrice }}</small>
+            <small>Servicios incluidos: {{ pkg.items?.length || 0 }}</small>
+          </div>
+        </article>
+      </div>
+    </section>
+
     <div class="feedback error" *ngIf="errorMessage">
       {{ errorMessage }}
     </div>

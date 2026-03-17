@@ -22,6 +22,9 @@ import { PublicBookingComponent } from './features/public-booking/public-booking
 import { PublicBusinessesComponent } from './features/public-businesses/public-businesses.component';
 import { PromotionsListComponent } from './features/promotions/promotions-list/promotions-list.component';
 import { PromotionCreateComponent } from './features/promotions/promotion-create/promotion-create.component';
+import { ServicePackagesListComponent } from './features/service-packages/service-package-list/service-packages-list.component';
+import { ServicePackageCreateComponent } from './features/service-packages/service-package-create/service-package-create.component';
+import { ServicePackageDetailComponent } from './features/service-packages/service-package-detail/service-package-detail.component';
 
 export const appRoutes: Routes = [
   {
@@ -54,6 +57,10 @@ export const appRoutes: Routes = [
 
       { path: 'businesses/:businessId/promotions', component: PromotionsListComponent },
       { path: 'businesses/:businessId/promotions/new', component: PromotionCreateComponent },
+
+      { path: 'businesses/:businessId/service-packages', component: ServicePackagesListComponent },
+      { path: 'businesses/:businessId/service-packages/new', component: ServicePackageCreateComponent },
+      { path: 'businesses/:businessId/service-packages/:packageId', component: ServicePackageDetailComponent },
 
       {
         path: 'businesses/:businessId/employees/:employeeId/services',

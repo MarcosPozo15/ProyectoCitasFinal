@@ -118,4 +118,46 @@ export class ServicesService {
       },
     };
   }
+
+  async archiveService(businessId: string, serviceId: string) {
+    const service = await this.prisma.service.findFirst({
+      where: {
+        id: serviceId,
+        businessId,
+      },
+      select: { id: true },
+    });
+
+    if (!service) {
+      throw new NotFoundException('Servicio no encontrado');
+    }
+
+    return this.prisma.service.update({
+      where: { id: serviceId },
+      data: {
+        status: ServiceStatus.ARCHIVED,
+      },
+    });
+  }
+
+  async activateService(businessId: string, serviceId: string) {
+    const service = await this.prisma.service.findFirst({
+      where: {
+        id: serviceId,
+        businessId,
+      },
+      select: { id: true },
+    });
+
+    if (!service) {
+      throw new NotFoundException('Servicio no encontrado');
+    }
+
+    return this.prisma.service.update({
+      where: { id: serviceId },
+      data: {
+        status: ServiceStatus.ACTIVE,
+      },
+    });
+  }
 }

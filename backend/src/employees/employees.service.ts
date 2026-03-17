@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { EmployeeStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { ListEmployeesQueryDto } from './dto/list-employees-query.dto';
@@ -94,5 +95,53 @@ export class EmployeesService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  async deactivateEmployee(businessId: string, employeeId: string) {
+    const employee = await this.prisma.employee.findFirst({
+      where: {
+        id: employeeId,
+        businessId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!employee) {
+      throw new NotFoundException('Empleado no encontrado');
+    }
+
+    return this.prisma.employee.update({
+      where: { id: employeeId },
+      data: {
+        status: EmployeeStatus.INACTIVE,
+        isBookable: false,
+      },
+    });
+  }
+
+  async activateEmployee(businessId: string, employeeId: string) {
+    const employee = await this.prisma.employee.findFirst({
+      where: {
+        id: employeeId,
+        businessId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!employee) {
+      throw new NotFoundException('Empleado no encontrado');
+    }
+
+    return this.prisma.employee.update({
+      where: { id: employeeId },
+      data: {
+        status: EmployeeStatus.ACTIVE,
+        isBookable: true,
+      },
+    });
   }
 }

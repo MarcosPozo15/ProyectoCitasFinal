@@ -16,6 +16,7 @@ import {
   Business,
   Employee,
   Promotion,
+  ServicePackage,
   Service,
 } from '../../core/services/businesses.service';
 
@@ -37,6 +38,7 @@ export class PublicBookingComponent {
   services: Service[] = [];
   promotions: Promotion[] = [];
   slots: AvailabilitySlot[] = [];
+  packages: ServicePackage[] = [];
   isLoading = true;
   isSearching = false;
   isSubmitting = false;
@@ -108,6 +110,16 @@ export class PublicBookingComponent {
           },
           error: () => {
             this.errorMessage = 'No se pudieron cargar los servicios';
+            finish();
+          },
+        });
+        
+        this.businessesService.listPublicServicePackages(business.id).subscribe({
+          next: (response) => {
+            this.packages = response.items;
+            finish();
+          },
+          error: () => {
             finish();
           },
         });

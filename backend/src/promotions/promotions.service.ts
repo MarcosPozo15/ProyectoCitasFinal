@@ -173,4 +173,58 @@ export class PromotionsService {
       },
     };
   }
+
+  async toggleActive(businessId: string, promotionId: string) {
+    const promotion = await this.prisma.promotion.findFirst({
+      where: {
+        id: promotionId,
+        businessId,
+      },
+      select: {
+        id: true,
+        isActive: true,
+      },
+    });
+
+    if (!promotion) {
+      throw new NotFoundException('Promoción no encontrada');
+    }
+
+    return this.prisma.promotion.update({
+      where: { id: promotionId },
+      data: {
+        isActive: !promotion.isActive,
+      },
+      include: {
+        service: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+  }
+
+  async deletePromotion(businessId: string, promotionId: string) {
+    const promotion = await this.prisma.promotion.findFirst({
+      where: {
+        id: promotionId,
+        businessId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!promotion) {
+      throw new NotFoundException('Promoción no encontrada');
+    }
+
+    await this.prisma.promotion.delete({
+      where: { id: promotionId },
+    });
+
+    return { success: true };
+  }
 }

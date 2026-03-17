@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -36,5 +37,23 @@ export class ServicesController {
     @Query() query: ListServicesQueryDto,
   ) {
     return this.servicesService.listServices(businessId, query);
+  }
+
+  @Patch(':serviceId/archive')
+  @Roles(PlatformRole.SUPERADMIN, PlatformRole.BUSINESS_ADMIN)
+  async archiveService(
+    @Param('businessId') businessId: string,
+    @Param('serviceId') serviceId: string,
+  ) {
+    return this.servicesService.archiveService(businessId, serviceId);
+  }
+
+  @Patch(':serviceId/activate')
+  @Roles(PlatformRole.SUPERADMIN, PlatformRole.BUSINESS_ADMIN)
+  async activateService(
+    @Param('businessId') businessId: string,
+    @Param('serviceId') serviceId: string,
+  ) {
+    return this.servicesService.activateService(businessId, serviceId);
   }
 }

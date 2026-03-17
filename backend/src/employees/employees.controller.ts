@@ -3,7 +3,7 @@ import {
   Controller,
   Get,
   Param,
-  ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -37,5 +37,23 @@ export class EmployeesController {
     @Query() query: ListEmployeesQueryDto,
   ) {
     return this.employeesService.listEmployees(businessId, query);
+  }
+
+  @Patch(':employeeId/deactivate')
+  @Roles(PlatformRole.SUPERADMIN, PlatformRole.BUSINESS_ADMIN)
+  async deactivateEmployee(
+    @Param('businessId') businessId: string,
+    @Param('employeeId') employeeId: string,
+  ) {
+    return this.employeesService.deactivateEmployee(businessId, employeeId);
+  }
+
+  @Patch(':employeeId/activate')
+  @Roles(PlatformRole.SUPERADMIN, PlatformRole.BUSINESS_ADMIN)
+  async activateEmployee(
+    @Param('businessId') businessId: string,
+    @Param('employeeId') employeeId: string,
+  ) {
+    return this.employeesService.activateEmployee(businessId, employeeId);
   }
 }

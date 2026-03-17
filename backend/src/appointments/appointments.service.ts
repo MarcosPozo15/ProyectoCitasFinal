@@ -531,4 +531,55 @@ export class AppointmentsService {
       },
     };
   }
+    async cancelAppointment(
+    businessId: string,
+    appointmentId: string,
+    dto: { reason?: string },
+  ) {
+    const appointment = await this.prisma.appointment.findFirst({
+      where: {
+        id: appointmentId,
+        businessId,
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+
+    if (!appointment) {
+      throw new NotFoundException('Cita no encontrada');
+    }
+
+    if (
+      appointment.status === AppointmentStatus.CANCELLED_BY_BUSINESS ||
+      appointment.status === AppointmentStatus.CANCELLED_BY_CUSTOMER
+    ) {
+      throw new BadRequestException('La cita ya está cancelada');
+    }
+
+    if (
+      appointment.status === AppointmentStatus.COMPLETED ||
+      appointment.status === AppointmentStatus.NO_SHOW
+    ) {
+      throw new BadRequestException(
+        'No se puede cancelar una cita ya cerrada',
+      );
+    }
+
+    return this.prisma.appointment.update({
+      where: { id: appointmentId },
+      data: {
+        status: AppointmentStatus.CANCELLED_BY_BUSINESS,
+        cancelledAt: new Date(),
+        cancellationReason:
+          dto.reason?.trim() || 'Cancelada desde el panel interno',
+      },
+      include: {
+        customer: true,
+        employee: true,
+        service: true,
+      },
+    });
+  }
 }

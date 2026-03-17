@@ -1,0 +1,44 @@
+<section class="page">
+  <div class="page-header">
+    <div>
+      <h1>Nuevo combo / paquete</h1>
+      <div class="header-links">
+        <a class="secondary-link" [routerLink]="['/businesses', businessId, 'service-packages']">
+          Volver a combos
+        </a>
+        <a class="secondary-link" routerLink="/my-business">Volver a mi negocio</a>
+      </div>
+    </div>
+  </div>
+
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  <p class="success" *ngIf="successMessage">{{ successMessage }}</p>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="card form-grid">
+    <label>
+      <span>Nombre</span>
+      <input type="text" formControlName="name" />
+    </label>
+
+    <label>
+      <span>Slug</span>
+      <input type="text" formControlName="slug" />
+    </label>
+
+    <label>
+      <span>Descripción</span>
+      <textarea rows="4" formControlName="description"></textarea>
+    </label>
+
+    <label class="checkbox-row">
+      <input type="checkbox" formControlName="isActive" />
+      <span>Activo</span>
+    </label>
+
+    <div class="actions-row">
+      <button type="submit" [disabled]="isSubmitting">
+        {{ isSubmitting ? 'Guardando...' : 'Crear combo' }}
+      </button>
+    </div>
+  </form>
+</section>

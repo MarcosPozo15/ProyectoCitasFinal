@@ -7,6 +7,9 @@
         <a class="secondary-link" [routerLink]="['/businesses', businessId, 'promotions']">
           Ir a promociones
         </a>
+        <a class="secondary-link" [routerLink]="['/businesses', businessId, 'service-packages']">
+          Ir a combos
+        </a>
       </div>
     </div>
 
@@ -26,6 +29,26 @@
       <p><strong>Precio:</strong> {{ item.price }}</p>
       <p><strong>Estado:</strong> {{ item.status }}</p>
       <p><strong>Depósito:</strong> {{ item.requiresDeposit ? 'Sí' : 'No' }}</p>
+
+      <div class="actions">
+        <button
+          type="button"
+          class="danger-button"
+          *ngIf="item.status !== 'ARCHIVED'"
+          (click)="archive(item)"
+        >
+          Archivar
+        </button>
+
+        <button
+          type="button"
+          class="primary-link"
+          *ngIf="item.status === 'ARCHIVED'"
+          (click)="activate(item)"
+        >
+          Activar
+        </button>
+      </div>
     </article>
   </div>
 </section>

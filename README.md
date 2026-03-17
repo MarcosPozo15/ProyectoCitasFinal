@@ -13,6 +13,7 @@ Bloques completados:
 - Bloque 25: directorio público de negocios
 - Bloque 26: pricing / promos base
 - Bloque 27: UI interna de promociones
+- Bloque 28: combos / paquetes base
 
 ## Decisiones de rutas
 
@@ -56,6 +57,8 @@ Ya permite:
 - creación interna de promociones
 - chat de reservas guiado dentro de la página pública
 - capa de servicio para waitlist pública e interna
+- gestión interna básica de combos / paquetes
+- exposición pública informativa de combos en `/book/:slug`
 
 ## Backend actual
 
@@ -79,6 +82,14 @@ Ya permite:
   - `POST /api/v1/businesses/:businessId/waitlist`
   - `GET /api/v1/businesses/:businessId/waitlist`
   - `POST /api/v1/businesses/:businessId/waitlist/matches`
+  - endpoints internos de combos:
+  - `POST /api/v1/businesses/:businessId/service-packages`
+  - `GET /api/v1/businesses/:businessId/service-packages`
+  - `GET /api/v1/businesses/:businessId/service-packages/:packageId`
+  - `POST /api/v1/businesses/:businessId/service-packages/:packageId/items`
+  - `DELETE /api/v1/businesses/:businessId/service-packages/:packageId/items/:itemId`
+- endpoint público de combos:
+  - `GET /api/v1/public/businesses/:businessId/service-packages`
 
 ## IA de reservas
 
@@ -94,3 +105,30 @@ Se activa si en el backend configuras:
 OPENAI_API_KEY=tu_api_key_real
 OPENAI_MODEL=gpt-4.1-mini
 OPENAI_API_URL=https://api.openai.com/v1/chat/completions
+
+### Estado actual de combos / paquetes
+
+El modelo de combos ya existía en Prisma y en este bloque pasa a tener implementación real en backend y frontend interno.
+
+En esta fase:
+- los combos se pueden crear y gestionar
+- los combos se pueden mostrar públicamente
+- los combos todavía no se reservan directamente como cita, porque el modelo de `Appointment` sigue referenciando `serviceId` y no `servicePackageId`
+## Bloque 29 - Bajas / cancelaciones / desactivaciones
+
+Incluye:
+- desactivar y reactivar empleados
+- archivar y reactivar servicios
+- cancelar citas desde panel interno
+- activar/desactivar y eliminar promociones
+- activar/desactivar y eliminar combos
+
+Criterios:
+- empleados y servicios no se borran físicamente
+- las citas se cancelan, no se borran
+- promociones y combos sí pueden eliminarse
+
+
+
+18/03/26
+Seguir por el numero 2 DTO'S

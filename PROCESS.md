@@ -236,3 +236,37 @@ Permitir crear y consultar promociones desde el panel interno sin depender de ll
 
 ### Resultado
 Las promociones dejan de depender de pruebas manuales por API y pasan a tener gestión básica desde interfaz.
+## Bloque 28 - Combos / paquetes base
+
+### Objetivo
+Activar desde cero la gestión de combos/paquetes, partiendo del modelo ya existente en Prisma.
+
+### Entregado
+- [x] módulo backend `service-packages`
+- [x] creación interna de combos
+- [x] listado interno de combos
+- [x] detalle interno del combo
+- [x] añadir y quitar servicios del combo
+- [x] rutas internas para combos
+- [x] exposición pública informativa de combos
+
+### Limitación conocida
+- [ ] los combos todavía no se reservan directamente como cita
+- [ ] el modelo `Appointment` sigue dependiendo de `serviceId`
+
+### Resultado
+El proyecto deja de tener combos solo “en schema” y pasa a tener implementación real usable.
+
+## Bloque 29 - Bajas / cancelaciones / desactivaciones
+
+Incluye:
+- desactivar y reactivar empleados
+- archivar y reactivar servicios
+- cancelar citas desde panel interno
+- activar/desactivar y eliminar promociones
+- activar/desactivar y eliminar combos
+
+Criterios:
+- empleados y servicios no se borran físicamente
+- las citas se cancelan, no se borran
+- promociones y combos sí pueden eliminarse

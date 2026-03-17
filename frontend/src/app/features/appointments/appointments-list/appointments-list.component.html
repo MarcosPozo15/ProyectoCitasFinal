@@ -22,6 +22,17 @@
       <p><strong>Fin:</strong> {{ item.endsAt }}</p>
       <p><strong>Estado:</strong> {{ item.status }}</p>
       <p><strong>Canal:</strong> {{ item.source }}</p>
+
+      <div class="actions">
+        <button
+          type="button"
+          class="danger-button"
+          *ngIf="canCancel(item)"
+          (click)="cancel(item)"
+        >
+          Cancelar cita
+        </button>
+      </div>
     </article>
   </div>
 </section>

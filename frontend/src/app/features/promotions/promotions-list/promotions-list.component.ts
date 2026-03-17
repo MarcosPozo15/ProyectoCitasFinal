@@ -66,4 +66,31 @@ export class PromotionsListComponent {
   trackByPromotion(index: number, item: Promotion): string {
     return `${index}-${item.id}`;
   }
+
+  toggleActive(item: Promotion): void {
+    this.businessesService
+      .togglePromotionActive(this.businessId, item.id)
+      .subscribe({
+        next: () => this.loadPromotions(),
+        error: (error) => {
+          console.error('Error cambiando estado de promo:', error);
+          this.errorMessage =
+            error?.error?.message || 'No se pudo cambiar el estado de la promoción';
+        },
+      });
+  }
+
+  remove(item: Promotion): void {
+    const ok = window.confirm(`¿Eliminar la promoción "${item.name}"?`);
+    if (!ok) return;
+
+    this.businessesService.deletePromotion(this.businessId, item.id).subscribe({
+      next: () => this.loadPromotions(),
+      error: (error) => {
+        console.error('Error eliminando promoción:', error);
+        this.errorMessage =
+          error?.error?.message || 'No se pudo eliminar la promoción';
+      },
+    });
+  }
 }

@@ -9,10 +9,23 @@ import { WaitlistService } from '../waitlist/waitlist.service';
 import { ListBusinessesQueryDto } from '../businesses/dto/list-businesses-query.dto';
 import { PromotionsService } from '../promotions/promotions.service';
 import { ListPromotionsQueryDto } from '../promotions/dto/list-promotions-query.dto';
+import { ListServicePackagesQueryDto } from '../service-packages/dto/list-service-packages-query.dto';
+import { Module } from '@nestjs/common';
+import { ServicePackagesController } from '../service-packages/service-packages.controller';
+import { ServicePackagesService } from '../service-packages/service-packages.service';
+
+@Module({
+  controllers: [ServicePackagesController],
+  providers: [ServicePackagesService],
+  exports: [ServicePackagesService],
+})
+export class ServicePackagesModule {}
 
 @Injectable()
 export class PublicService {
+
   constructor(
+    private readonly servicePackagesService: ServicePackagesService,
     private readonly prisma: PrismaService,
     private readonly appointmentsService: AppointmentsService,
     private readonly businessesService: BusinessesService,
@@ -23,6 +36,12 @@ export class PublicService {
   async listPublicBusinesses(query: ListBusinessesQueryDto) {
     return this.businessesService.listPublicBusinesses(query);
   }
+  async listPublicServicePackages(
+  businessId: string,
+  query: ListServicePackagesQueryDto,
+) { 
+  return this.servicePackagesService.listPublicPackages(businessId, query);
+}
 
   async getBusinessBySlug(slug: string) {
     const business = await this.prisma.business.findFirst({

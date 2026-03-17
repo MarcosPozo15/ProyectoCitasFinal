@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -12,6 +13,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { AppointmentsService } from './appointments.service';
+import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { GetAvailabilityQueryDto } from './dto/get-availability-query.dto';
 import { ListAppointmentsQueryDto } from './dto/list-appointments-query.dto';
@@ -51,5 +53,19 @@ export class AppointmentsController {
     @Query() query: ListAppointmentsQueryDto,
   ) {
     return this.appointmentsService.listAppointments(businessId, query);
+  }
+
+  @Patch('appointments/:appointmentId/cancel')
+  @Roles(PlatformRole.SUPERADMIN, PlatformRole.BUSINESS_ADMIN)
+  async cancelAppointment(
+    @Param('businessId') businessId: string,
+    @Param('appointmentId') appointmentId: string,
+    @Body() dto: CancelAppointmentDto,
+  ) {
+    return this.appointmentsService.cancelAppointment(
+      businessId,
+      appointmentId,
+      dto,
+    );
   }
 }

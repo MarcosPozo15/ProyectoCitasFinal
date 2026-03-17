@@ -230,6 +230,7 @@ model ServicePackage {
 
   business Business             @relation(fields: [businessId], references: [id], onDelete: Cascade)
   items    ServicePackageItem[]
+  appointments Appointment[]
 
   @@unique([businessId, slug])
   @@index([businessId])
@@ -285,7 +286,8 @@ model Appointment {
   businessId         String
   customerId         String
   employeeId         String
-  serviceId          String
+  serviceId          String?
+  servicePackageId   String?
   status             AppointmentStatus @default(CONFIRMED)
   source             AppointmentSource @default(WEB)
   startsAt           DateTime
@@ -302,15 +304,17 @@ model Appointment {
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
 
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  customer Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
-  service  Service  @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  business       Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer       Customer        @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  employee       Employee        @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  service        Service?        @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  servicePackage ServicePackage? @relation(fields: [servicePackageId], references: [id], onDelete: Restrict)
 
   @@index([businessId])
   @@index([customerId])
   @@index([employeeId])
   @@index([serviceId])
+  @@index([servicePackageId])
   @@index([status])
   @@index([startsAt, endsAt])
   @@map("appointments")

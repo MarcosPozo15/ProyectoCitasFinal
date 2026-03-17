@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -36,5 +38,23 @@ export class PromotionsController {
     @Query() query: ListPromotionsQueryDto,
   ) {
     return this.promotionsService.listPromotions(businessId, query);
+  }
+
+  @Patch(':promotionId/toggle-active')
+  @Roles(PlatformRole.SUPERADMIN, PlatformRole.BUSINESS_ADMIN)
+  async toggleActive(
+    @Param('businessId') businessId: string,
+    @Param('promotionId') promotionId: string,
+  ) {
+    return this.promotionsService.toggleActive(businessId, promotionId);
+  }
+
+  @Delete(':promotionId')
+  @Roles(PlatformRole.SUPERADMIN, PlatformRole.BUSINESS_ADMIN)
+  async deletePromotion(
+    @Param('businessId') businessId: string,
+    @Param('promotionId') promotionId: string,
+  ) {
+    return this.promotionsService.deletePromotion(businessId, promotionId);
   }
 }

@@ -50,4 +50,29 @@ export class ServicesListComponent {
       },
     });
   }
+
+  archive(item: Service): void {
+    const ok = window.confirm(`¿Archivar el servicio "${item.name}"?`);
+    if (!ok) return;
+
+    this.businessesService.archiveService(this.businessId, item.id).subscribe({
+      next: () => this.loadServices(),
+      error: (error) => {
+        console.error('Error archivando servicio:', error);
+        this.errorMessage =
+          error?.error?.message || 'No se pudo archivar el servicio';
+      },
+    });
+  }
+
+  activate(item: Service): void {
+    this.businessesService.activateService(this.businessId, item.id).subscribe({
+      next: () => this.loadServices(),
+      error: (error) => {
+        console.error('Error activando servicio:', error);
+        this.errorMessage =
+          error?.error?.message || 'No se pudo activar el servicio';
+      },
+    });
+  }
 }

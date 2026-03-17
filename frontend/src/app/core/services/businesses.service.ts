@@ -22,10 +22,13 @@ export type Employee = {
   jobTitle?: string;
   bio?: string;
   colorHex?: string;
+  status: string;
   isBookable: boolean;
   createdAt: string;
 };
-
+export type CancelAppointmentPayload = {
+  reason?: string;
+};
 export type Service = {
   id: string;
   name: string;
@@ -303,6 +306,57 @@ export type CreateAppointmentPayload = {
   customerEmail?: string;
   customerPhone?: string;
   customerNotes?: string;
+};
+
+export type ServicePackageItem = {
+  id: string;
+  servicePackageId: string;
+  serviceId: string;
+  sortOrder: number;
+  durationMinutes: number;
+  price: string;
+  createdAt: string;
+  service: {
+    id: string;
+    name: string;
+    slug: string;
+    durationMinutes: number;
+    price: string;
+    status: string;
+  };
+};
+
+export type ServicePackage = {
+  id: string;
+  businessId: string;
+  name: string;
+  slug: string;
+  description?: string;
+  totalDurationMin: number;
+  totalPrice: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  items?: ServicePackageItem[];
+};
+
+export type ListServicePackagesResponse = {
+  items: ServicePackage[];
+  meta: {
+    total: number;
+  };
+};
+
+export type CreateServicePackagePayload = {
+  name: string;
+  slug: string;
+  description?: string;
+  isActive?: boolean;
+};
+
+export type AddServicePackageItemPayload = {
+  serviceId: string;
+  sortOrder?: number;
 };
 
 @Injectable({
@@ -633,6 +687,155 @@ export class BusinessesService {
     return this.http.post<Promotion>(
       `${API_BASE_URL}/businesses/${businessId}/promotions`,
       payload,
+    );
+  }
+
+    listServicePackages(
+    businessId: string,
+    activeOnly?: boolean,
+  ): Observable<ListServicePackagesResponse> {
+    const suffix =
+      activeOnly !== undefined ? `?activeOnly=${String(activeOnly)}` : '';
+
+    return this.http.get<ListServicePackagesResponse>(
+      `${API_BASE_URL}/businesses/${businessId}/service-packages${suffix}`,
+    );
+  }
+
+  getServicePackage(
+    businessId: string,
+    packageId: string,
+  ): Observable<ServicePackage> {
+    return this.http.get<ServicePackage>(
+      `${API_BASE_URL}/businesses/${businessId}/service-packages/${packageId}`,
+    );
+  }
+
+  createServicePackage(
+    businessId: string,
+    payload: CreateServicePackagePayload,
+  ): Observable<ServicePackage> {
+    return this.http.post<ServicePackage>(
+      `${API_BASE_URL}/businesses/${businessId}/service-packages`,
+      payload,
+    );
+  }
+
+  addServicePackageItem(
+    businessId: string,
+    packageId: string,
+    payload: AddServicePackageItemPayload,
+  ): Observable<ServicePackageItem> {
+    return this.http.post<ServicePackageItem>(
+      `${API_BASE_URL}/businesses/${businessId}/service-packages/${packageId}/items`,
+      payload,
+    );
+  }
+
+  removeServicePackageItem(
+    businessId: string,
+    packageId: string,
+    itemId: string,
+  ): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(
+      `${API_BASE_URL}/businesses/${businessId}/service-packages/${packageId}/items/${itemId}`,
+    );
+  }
+
+  listPublicServicePackages(
+    businessId: string,
+    activeOnly = true,
+  ): Observable<ListServicePackagesResponse> {
+    return this.http.get<ListServicePackagesResponse>(
+      `${API_BASE_URL}/public/businesses/${businessId}/service-packages?activeOnly=${String(activeOnly)}`,
+    );
+  }
+    deactivateEmployee(
+    businessId: string,
+    employeeId: string,
+  ): Observable<Employee> {
+    return this.http.patch<Employee>(
+      `${API_BASE_URL}/businesses/${businessId}/employees/${employeeId}/deactivate`,
+      {},
+    );
+  }
+
+  activateEmployee(
+    businessId: string,
+    employeeId: string,
+  ): Observable<Employee> {
+    return this.http.patch<Employee>(
+      `${API_BASE_URL}/businesses/${businessId}/employees/${employeeId}/activate`,
+      {},
+    );
+  }
+
+  archiveService(
+    businessId: string,
+    serviceId: string,
+  ): Observable<Service> {
+    return this.http.patch<Service>(
+      `${API_BASE_URL}/businesses/${businessId}/services/${serviceId}/archive`,
+      {},
+    );
+  }
+
+  activateService(
+    businessId: string,
+    serviceId: string,
+  ): Observable<Service> {
+    return this.http.patch<Service>(
+      `${API_BASE_URL}/businesses/${businessId}/services/${serviceId}/activate`,
+      {},
+    );
+  }
+
+  cancelAppointment(
+    businessId: string,
+    appointmentId: string,
+    payload?: CancelAppointmentPayload,
+  ): Observable<Appointment> {
+    return this.http.patch<Appointment>(
+      `${API_BASE_URL}/businesses/${businessId}/appointments/${appointmentId}/cancel`,
+      payload ?? {},
+    );
+  }
+
+  togglePromotionActive(
+    businessId: string,
+    promotionId: string,
+  ): Observable<Promotion> {
+    return this.http.patch<Promotion>(
+      `${API_BASE_URL}/businesses/${businessId}/promotions/${promotionId}/toggle-active`,
+      {},
+    );
+  }
+
+  deletePromotion(
+    businessId: string,
+    promotionId: string,
+  ): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(
+      `${API_BASE_URL}/businesses/${businessId}/promotions/${promotionId}`,
+    );
+  }
+
+  toggleServicePackageActive(
+    businessId: string,
+    packageId: string,
+  ): Observable<ServicePackage> {
+    return this.http.patch<ServicePackage>(
+      `${API_BASE_URL}/businesses/${businessId}/service-packages/${packageId}/toggle-active`,
+      {},
+    );
+  }
+
+  deleteServicePackage(
+    businessId: string,
+    packageId: string,
+  ): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(
+      `${API_BASE_URL}/businesses/${businessId}/service-packages/${packageId}`,
     );
   }
 }
