@@ -103,28 +103,30 @@ export class AppointmentCreateComponent {
 
     const isoDate = `${raw.date}T00:00:00.000Z`;
 
-    this.businessesService
-      .getAvailability(
-        this.businessId,
-        raw.employeeId,
-        raw.serviceId,
-        isoDate,
-        15,
-      )
-      .subscribe({
-        next: (response) => {
-          this.slots = response.slots;
-          this.isSearching = false;
+  this.businessesService
+  .getAvailability(
+    this.businessId,
+    raw.employeeId,
+    {
+      serviceId: raw.serviceId,
+      date: isoDate,
+      slotStepMinutes: 15,
+    },
+  )
+  .subscribe({
+    next: (response) => {
+      this.slots = response.slots;
+      this.isSearching = false;
 
-          if (response.slots[0]) {
-            this.form.patchValue({ startsAt: response.slots[0].startsAt });
-          }
-        },
-        error: () => {
-          this.errorMessage = 'No se pudo consultar la disponibilidad';
-          this.isSearching = false;
-        },
-      });
+      if (response.slots[0]) {
+        this.form.patchValue({ startsAt: response.slots[0].startsAt });
+      }
+    },
+    error: () => {
+      this.errorMessage = 'No se pudo consultar la disponibilidad';
+      this.isSearching = false;
+    },
+  });
   }
 
   chooseSlot(slot: AvailabilitySlot): void {

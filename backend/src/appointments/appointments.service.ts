@@ -11,6 +11,7 @@ import {
   Weekday,
 } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { CancelAppointmentDto } from './dto/cancel-appointment.dto';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { GetAvailabilityQueryDto } from './dto/get-availability-query.dto';
 import { ListAppointmentsQueryDto } from './dto/list-appointments-query.dto';
@@ -81,6 +82,16 @@ export class AppointmentsService {
     );
   }
 
+  private assertSingleTarget(serviceId?: string, servicePackageId?: string) {
+    const count = Number(!!serviceId) + Number(!!servicePackageId);
+
+    if (count !== 1) {
+      throw new BadRequestException(
+        'Debes indicar exactamente uno: serviceId o servicePackageId',
+      );
+    }
+  }
+
   private async getBusinessAndEmployeeOrThrow(
     businessId: string,
     employeeId: string,
@@ -139,6 +150,109 @@ export class AppointmentsService {
     return employeeService;
   }
 
+  private async getEmployeePackageOrThrow(
+    businessId: string,
+    employeeId: string,
+    servicePackageId: string,
+  ) {
+    const servicePackage = await this.prisma.servicePackage.findFirst({
+      where: {
+        id: servicePackageId,
+        businessId,
+      },
+      include: {
+        items: {
+          include: {
+            service: true,
+          },
+          orderBy: {
+            sortOrder: 'asc',
+          },
+        },
+      },
+    });
+
+    if (!servicePackage) {
+      throw new NotFoundException('Combo no encontrado en este negocio');
+    }
+
+    if (!servicePackage.isActive) {
+      throw new BadRequestException('Ese combo no está activo');
+    }
+
+    if (servicePackage.items.length === 0) {
+      throw new BadRequestException('Ese combo no tiene servicios');
+    }
+
+    const serviceIds = servicePackage.items.map((item) => item.serviceId);
+
+    const assignments = await this.prisma.employeeService.findMany({
+      where: {
+        employeeId,
+        serviceId: {
+          in: serviceIds,
+        },
+      },
+      select: {
+        serviceId: true,
+      },
+    });
+
+    const assignedIds = new Set(assignments.map((item) => item.serviceId));
+
+    const missing = serviceIds.filter((id) => !assignedIds.has(id));
+
+    if (missing.length > 0) {
+      throw new BadRequestException(
+        'El empleado no puede realizar todos los servicios del combo',
+      );
+    }
+
+    return servicePackage;
+  }
+
+  private async resolveBookingTarget(
+    businessId: string,
+    employeeId: string,
+    input: { serviceId?: string; servicePackageId?: string },
+  ) {
+    this.assertSingleTarget(input.serviceId, input.servicePackageId);
+
+    if (input.serviceId) {
+      const employeeService = await this.getEmployeeServiceOrThrow(
+        businessId,
+        employeeId,
+        input.serviceId,
+      );
+
+      return {
+        type: 'service' as const,
+        durationMinutes:
+          employeeService.customDurationMin ??
+          employeeService.service.durationMinutes,
+        serviceId: input.serviceId,
+        servicePackageId: undefined,
+        employeeService,
+        servicePackage: undefined,
+      };
+    }
+
+    const servicePackage = await this.getEmployeePackageOrThrow(
+      businessId,
+      employeeId,
+      input.servicePackageId!,
+    );
+
+    return {
+      type: 'package' as const,
+      durationMinutes: servicePackage.totalDurationMin,
+      serviceId: undefined,
+      servicePackageId: input.servicePackageId,
+      employeeService: undefined,
+      servicePackage,
+    };
+  }
+
   private async getDailyAvailabilityContext(
     businessId: string,
     employeeId: string,
@@ -188,20 +302,11 @@ export class AppointmentsService {
         where: {
           businessId,
           OR: [
-            {
-              targetType: 'BUSINESS',
-            },
-            {
-              targetType: 'EMPLOYEE',
-              employeeId,
-            },
+            { targetType: 'BUSINESS' },
+            { targetType: 'EMPLOYEE', employeeId },
           ],
-          startsAt: {
-            lt: dayEnd,
-          },
-          endsAt: {
-            gt: dayStart,
-          },
+          startsAt: { lt: dayEnd },
+          endsAt: { gt: dayStart },
         },
       }),
       this.prisma.appointment.findMany({
@@ -215,12 +320,8 @@ export class AppointmentsService {
               AppointmentStatus.COMPLETED,
             ],
           },
-          startsAt: {
-            lt: dayEnd,
-          },
-          endsAt: {
-            gt: dayStart,
-          },
+          startsAt: { lt: dayEnd },
+          endsAt: { gt: dayStart },
         },
       }),
     ]);
@@ -249,15 +350,12 @@ export class AppointmentsService {
       employeeId,
     );
 
-    const employeeService = await this.getEmployeeServiceOrThrow(
-      businessId,
-      employeeId,
-      query.serviceId,
-    );
+    const bookingTarget = await this.resolveBookingTarget(businessId, employeeId, {
+      serviceId: query.serviceId,
+      servicePackageId: query.servicePackageId,
+    });
 
-    const durationMinutes =
-      employeeService.customDurationMin ??
-      employeeService.service.durationMinutes;
+    const durationMinutes = bookingTarget.durationMinutes;
 
     const { businessHours, employeeHours, weekday } =
       await this.getDailyAvailabilityContext(businessId, employeeId, dateOnly);
@@ -267,6 +365,7 @@ export class AppointmentsService {
         businessId,
         employeeId,
         serviceId: query.serviceId,
+        servicePackageId: query.servicePackageId,
         weekday,
         date: dateOnly.toISOString(),
         slots: [],
@@ -279,6 +378,7 @@ export class AppointmentsService {
         businessId,
         employeeId,
         serviceId: query.serviceId,
+        servicePackageId: query.servicePackageId,
         weekday,
         date: dateOnly.toISOString(),
         slots: [],
@@ -299,6 +399,7 @@ export class AppointmentsService {
         businessId,
         employeeId,
         serviceId: query.serviceId,
+        servicePackageId: query.servicePackageId,
         weekday,
         date: dateOnly.toISOString(),
         slots: [],
@@ -352,6 +453,7 @@ export class AppointmentsService {
       businessId,
       employeeId,
       serviceId: query.serviceId,
+      servicePackageId: query.servicePackageId,
       weekday,
       date: dateOnly.toISOString(),
       durationMinutes,
@@ -371,17 +473,14 @@ export class AppointmentsService {
       dto.employeeId,
     );
 
-    const employeeService = await this.getEmployeeServiceOrThrow(
-      businessId,
-      dto.employeeId,
-      dto.serviceId,
+    const bookingTarget = await this.resolveBookingTarget(businessId, dto.employeeId, {
+      serviceId: dto.serviceId,
+      servicePackageId: dto.servicePackageId,
+    });
+
+    const endsAt = new Date(
+      startsAt.getTime() + bookingTarget.durationMinutes * 60 * 1000,
     );
-
-    const durationMinutes =
-      employeeService.customDurationMin ??
-      employeeService.service.durationMinutes;
-
-    const endsAt = new Date(startsAt.getTime() + durationMinutes * 60 * 1000);
 
     const dateOnly = new Date(
       Date.UTC(
@@ -393,6 +492,7 @@ export class AppointmentsService {
 
     const availability = await this.getAvailability(businessId, dto.employeeId, {
       serviceId: dto.serviceId,
+      servicePackageId: dto.servicePackageId,
       date: dateOnly.toISOString(),
       slotStepMinutes: 5,
     });
@@ -403,7 +503,7 @@ export class AppointmentsService {
 
     if (!matchingSlot) {
       throw new ConflictException(
-        'No hay disponibilidad para esa hora con ese empleado y servicio',
+        'No hay disponibilidad para esa hora con ese empleado',
       );
     }
 
@@ -437,13 +537,18 @@ export class AppointmentsService {
       });
     }
 
-    const depositPercentage = employeeService.service.requiresDeposit
-      ? employeeService.service.depositPercentage ??
-        employee.business.depositPercentage
-      : null;
+    const depositPercentage =
+      bookingTarget.type === 'service' &&
+      bookingTarget.employeeService?.service.requiresDeposit
+        ? bookingTarget.employeeService.service.depositPercentage ??
+          employee.business.depositPercentage
+        : null;
 
     const servicePrice =
-      employeeService.customPrice ?? employeeService.service.price;
+      bookingTarget.type === 'service'
+        ? bookingTarget.employeeService!.customPrice ??
+          bookingTarget.employeeService!.service.price
+        : bookingTarget.servicePackage!.totalPrice;
 
     const depositAmount =
       depositPercentage !== null
@@ -455,7 +560,8 @@ export class AppointmentsService {
         businessId,
         customerId: customer.id,
         employeeId: dto.employeeId,
-        serviceId: dto.serviceId,
+        serviceId: bookingTarget.serviceId ?? null,
+        servicePackageId: bookingTarget.servicePackageId ?? null,
         status: AppointmentStatus.CONFIRMED,
         source: dto.source ?? AppointmentSource.WEB,
         startsAt,
@@ -470,6 +576,7 @@ export class AppointmentsService {
         customer: true,
         employee: true,
         service: true,
+        servicePackage: true,
       },
     });
   }
@@ -516,6 +623,7 @@ export class AppointmentsService {
           customer: true,
           employee: true,
           service: true,
+          servicePackage: true,
         },
       }),
       this.prisma.appointment.count({ where }),
@@ -531,10 +639,11 @@ export class AppointmentsService {
       },
     };
   }
-    async cancelAppointment(
+
+  async cancelAppointment(
     businessId: string,
     appointmentId: string,
-    dto: { reason?: string },
+    dto: CancelAppointmentDto,
   ) {
     const appointment = await this.prisma.appointment.findFirst({
       where: {
@@ -579,6 +688,7 @@ export class AppointmentsService {
         customer: true,
         employee: true,
         service: true,
+        servicePackage: true,
       },
     });
   }

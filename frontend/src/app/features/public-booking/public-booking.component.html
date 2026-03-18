@@ -14,7 +14,7 @@
       <div class="promotions-header">
         <h2>Promociones activas</h2>
         <p>
-          Estas promociones están vigentes ahora mismo para este negocio o para el servicio seleccionado.
+          Estas promociones están vigentes ahora mismo para este negocio o para la reserva seleccionada.
         </p>
       </div>
 
@@ -48,16 +48,16 @@
       <div class="promotions-header">
         <h2>Combos disponibles</h2>
         <p>
-          Estos paquetes se muestran de forma informativa. La reserva directa del combo se activará en un bloque posterior.
+          Ya puedes reservar estos combos directamente desde el formulario manual.
         </p>
       </div>
-    
+
       <div class="promotions-list">
         <article class="promotion-item" *ngFor="let pkg of packages">
           <div class="promotion-badge">
             {{ pkg.totalDurationMin }} min
           </div>
-    
+
           <div class="promotion-content">
             <strong>{{ pkg.name }}</strong>
             <p *ngIf="pkg.description">{{ pkg.description }}</p>
@@ -142,6 +142,14 @@
 
         <form [formGroup]="form" (ngSubmit)="submit()" class="booking-form">
           <label>
+            <span>Tipo de reserva</span>
+            <select formControlName="bookingMode" (change)="onBookingModeChange()">
+              <option value="SERVICE">Servicio</option>
+              <option value="PACKAGE">Combo</option>
+            </select>
+          </label>
+
+          <label>
             <span>Empleado</span>
             <select formControlName="employeeId">
               <option value="">Selecciona un empleado</option>
@@ -151,12 +159,22 @@
             </select>
           </label>
 
-          <label>
+          <label *ngIf="form.getRawValue().bookingMode === 'SERVICE'">
             <span>Servicio</span>
             <select formControlName="serviceId">
               <option value="">Selecciona un servicio</option>
               <option *ngFor="let service of services" [value]="service.id">
                 {{ service.name }} · {{ service.durationMinutes }} min
+              </option>
+            </select>
+          </label>
+
+          <label *ngIf="form.getRawValue().bookingMode === 'PACKAGE'">
+            <span>Combo</span>
+            <select formControlName="servicePackageId">
+              <option value="">Selecciona un combo</option>
+              <option *ngFor="let pkg of packages" [value]="pkg.id">
+                {{ pkg.name }} · {{ pkg.totalDurationMin }} min · {{ pkg.totalPrice }}
               </option>
             </select>
           </label>

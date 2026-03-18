@@ -355,6 +355,19 @@ export class ServicePackagesService {
       throw new NotFoundException('Combo no encontrado');
     }
 
+    const usedInAppointments = await this.prisma.appointment.count({
+      where: {
+        businessId,
+        servicePackageId: packageId,
+      },
+    });
+
+    if (usedInAppointments > 0) {
+      throw new ConflictException(
+        'No se puede eliminar un combo que ya tiene citas asociadas',
+      );
+    }
+
     await this.prisma.servicePackage.delete({
       where: { id: packageId },
     });

@@ -130,5 +130,15 @@ Criterios:
 
 
 
-18/03/26
-Seguir por el numero 2 DTO'S
+## Bloque 30 - Reserva real de combos
+
+Incluye:
+- ampliación de `Appointment` para soportar `servicePackageId`
+- disponibilidad real basada en duración total del combo
+- validación de que el empleado pueda realizar todos los servicios del combo
+- creación real de citas contra combos
+- soporte en booking público manual
+- visibilidad de la cita como combo en listados internos
+
+Limitación actual:
+- el chat de reservas sigue orientado principalmente a servicios simples

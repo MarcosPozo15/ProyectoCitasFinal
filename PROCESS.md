@@ -270,3 +270,19 @@ Criterios:
 - empleados y servicios no se borran físicamente
 - las citas se cancelan, no se borran
 - promociones y combos sí pueden eliminarse
+
+## Bloque 30 - Reserva real de combos
+
+### Objetivo
+Permitir que los combos dejen de ser solo visibles/gestionables y puedan reservarse de verdad como entidad propia.
+
+### Entregado
+- [x] `Appointment` ampliado con `servicePackageId`
+- [x] disponibilidad real para combos
+- [x] validación de empleado compatible con todos los servicios del combo
+- [x] creación de cita con combo
+- [x] booking público manual con selector de combo
+- [x] listado interno mostrando combo o servicio
+
+### Limitación conocida
+- [ ] el chat todavía no guía correctamente reservas de combos

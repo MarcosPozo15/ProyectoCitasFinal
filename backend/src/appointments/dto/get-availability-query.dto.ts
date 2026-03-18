@@ -1,24 +1,21 @@
-import { Transform } from 'class-transformer';
-import {
-  IsDateString,
-  IsInt,
-  IsOptional,
-  IsString,
-  Max,
-  Min,
-} from 'class-validator';
+import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class GetAvailabilityQueryDto {
+  @IsOptional()
   @IsString()
-  serviceId!: string;
+  serviceId?: string;
 
-  @IsDateString()
+  @IsOptional()
+  @IsString()
+  servicePackageId?: string;
+
+  @IsString()
   date!: string;
 
   @IsOptional()
-  @Transform(({ value }) => Number(value))
+  @Type(() => Number)
   @IsInt()
-  @Min(5)
-  @Max(120)
-  slotStepMinutes: number = 15;
+  @Min(1)
+  slotStepMinutes?: number = 15;
 }

@@ -90,7 +90,8 @@ export type AvailabilitySlot = {
 export type AvailabilityResponse = {
   businessId: string;
   employeeId: string;
-  serviceId: string;
+  serviceId?: string;
+  servicePackageId?: string;
   weekday: string;
   date: string;
   durationMinutes?: number;
@@ -116,10 +117,14 @@ export type Appointment = {
     firstName: string;
     lastName: string;
   };
-  service: {
+  service?: {
     id: string;
     name: string;
-  };
+  } | null;
+  servicePackage?: {
+    id: string;
+    name: string;
+  } | null;
 };
 
 export type BookingChatQuickReply = {
@@ -298,7 +303,8 @@ export type CreateBlockoutPayload = {
 
 export type CreateAppointmentPayload = {
   employeeId: string;
-  serviceId: string;
+  serviceId?: string;
+  servicePackageId?: string;
   startsAt: string;
   source: 'WEB' | 'APP' | 'WHATSAPP' | 'MANUAL';
   customerFirstName: string;
@@ -307,7 +313,6 @@ export type CreateAppointmentPayload = {
   customerPhone?: string;
   customerNotes?: string;
 };
-
 export type ServicePackageItem = {
   id: string;
   servicePackageId: string;
@@ -507,27 +512,51 @@ export class BusinessesService {
     );
   }
 
-  getAvailability(
+    getAvailability(
     businessId: string,
     employeeId: string,
-    serviceId: string,
-    date: string,
-    slotStepMinutes = 15,
+    payload: {
+      serviceId?: string;
+      servicePackageId?: string;
+      date: string;
+      slotStepMinutes?: number;
+    },
   ): Observable<AvailabilityResponse> {
+    const query = new URLSearchParams();
+
+    if (payload.serviceId) query.set('serviceId', payload.serviceId);
+    if (payload.servicePackageId) {
+      query.set('servicePackageId', payload.servicePackageId);
+    }
+    query.set('date', payload.date);
+    query.set('slotStepMinutes', String(payload.slotStepMinutes ?? 15));
+
     return this.http.get<AvailabilityResponse>(
-      `${API_BASE_URL}/businesses/${businessId}/employees/${employeeId}/availability?serviceId=${serviceId}&date=${encodeURIComponent(date)}&slotStepMinutes=${slotStepMinutes}`,
+      `${API_BASE_URL}/businesses/${businessId}/employees/${employeeId}/availability?${query.toString()}`,
     );
   }
 
-  getPublicAvailability(
+    getPublicAvailability(
     businessId: string,
     employeeId: string,
-    serviceId: string,
-    date: string,
-    slotStepMinutes = 15,
+    payload: {
+      serviceId?: string;
+      servicePackageId?: string;
+      date: string;
+      slotStepMinutes?: number;
+    },
   ): Observable<AvailabilityResponse> {
+    const query = new URLSearchParams();
+
+    if (payload.serviceId) query.set('serviceId', payload.serviceId);
+    if (payload.servicePackageId) {
+      query.set('servicePackageId', payload.servicePackageId);
+    }
+    query.set('date', payload.date);
+    query.set('slotStepMinutes', String(payload.slotStepMinutes ?? 15));
+
     return this.http.get<AvailabilityResponse>(
-      `${API_BASE_URL}/public/businesses/${businessId}/employees/${employeeId}/availability?serviceId=${serviceId}&date=${encodeURIComponent(date)}&slotStepMinutes=${slotStepMinutes}`,
+      `${API_BASE_URL}/public/businesses/${businessId}/employees/${employeeId}/availability?${query.toString()}`,
     );
   }
 

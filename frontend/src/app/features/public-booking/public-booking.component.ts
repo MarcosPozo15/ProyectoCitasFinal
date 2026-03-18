@@ -16,8 +16,8 @@ import {
   Business,
   Employee,
   Promotion,
-  ServicePackage,
   Service,
+  ServicePackage,
 } from '../../core/services/businesses.service';
 
 @Component({
@@ -36,9 +36,9 @@ export class PublicBookingComponent {
   business: Business | null = null;
   employees: Employee[] = [];
   services: Service[] = [];
+  packages: ServicePackage[] = [];
   promotions: Promotion[] = [];
   slots: AvailabilitySlot[] = [];
-  packages: ServicePackage[] = [];
   isLoading = true;
   isSearching = false;
   isSubmitting = false;
@@ -53,8 +53,10 @@ export class PublicBookingComponent {
   chatProvider: 'mock' | 'openai' | '' = '';
 
   form = this.fb.nonNullable.group({
+    bookingMode: ['SERVICE', [Validators.required]],
     employeeId: ['', [Validators.required]],
-    serviceId: ['', [Validators.required]],
+    serviceId: [''],
+    servicePackageId: [''],
     date: [this.getTomorrowDate(), [Validators.required]],
     startsAt: ['', [Validators.required]],
     customerFirstName: ['', [Validators.required, Validators.minLength(2)]],
@@ -80,7 +82,7 @@ export class PublicBookingComponent {
         let loaded = 0;
         const finish = () => {
           loaded += 1;
-          if (loaded === 3) {
+          if (loaded === 4) {
             this.isLoading = false;
             this.startChat();
           }
@@ -113,10 +115,13 @@ export class PublicBookingComponent {
             finish();
           },
         });
-        
+
         this.businessesService.listPublicServicePackages(business.id).subscribe({
           next: (response) => {
             this.packages = response.items;
+            if (this.packages[0]) {
+              this.form.patchValue({ servicePackageId: this.packages[0].id });
+            }
             finish();
           },
           error: () => {
@@ -156,6 +161,24 @@ export class PublicBookingComponent {
 
   useQuickReply(value: string): void {
     this.sendChatMessage(value, true);
+  }
+
+  onBookingModeChange(): void {
+    const mode = this.form.getRawValue().bookingMode;
+
+    if (mode === 'SERVICE') {
+      this.form.patchValue({
+        servicePackageId: '',
+        startsAt: '',
+      });
+    } else {
+      this.form.patchValue({
+        serviceId: '',
+        startsAt: '',
+      });
+    }
+
+    this.slots = [];
   }
 
   private sendChatMessage(message: string, pushUserMessage: boolean): void {
@@ -209,7 +232,11 @@ export class PublicBookingComponent {
     }
 
     if (response.state.serviceId) {
-      this.form.patchValue({ serviceId: response.state.serviceId });
+      this.form.patchValue({
+        bookingMode: 'SERVICE',
+        serviceId: response.state.serviceId,
+        servicePackageId: '',
+      });
     }
 
     if (response.state.employeeId) {
@@ -260,13 +287,35 @@ export class PublicBookingComponent {
     }
   }
 
+  private buildAvailabilityPayload() {
+    const raw = this.form.getRawValue();
+
+    if (raw.bookingMode === 'SERVICE') {
+      if (!raw.serviceId) return null;
+
+      return {
+        serviceId: raw.serviceId,
+        servicePackageId: undefined,
+      };
+    }
+
+    if (!raw.servicePackageId) return null;
+
+    return {
+      serviceId: undefined,
+      servicePackageId: raw.servicePackageId,
+    };
+  }
+
   searchAvailability(): void {
     if (!this.business) return;
 
     const raw = this.form.getRawValue();
+    const target = this.buildAvailabilityPayload();
 
-    if (!raw.employeeId || !raw.serviceId || !raw.date) {
-      this.errorMessage = 'Selecciona servicio, empleado y fecha';
+    if (!raw.employeeId || !raw.date || !target) {
+      this.errorMessage =
+        'Selecciona empleado, fecha y un servicio o combo válido';
       return;
     }
 
@@ -277,13 +326,11 @@ export class PublicBookingComponent {
     const isoDate = `${raw.date}T00:00:00.000Z`;
 
     this.businessesService
-      .getPublicAvailability(
-        this.business.id,
-        raw.employeeId,
-        raw.serviceId,
-        isoDate,
-        15,
-      )
+      .getPublicAvailability(this.business.id, raw.employeeId, {
+        ...target,
+        date: isoDate,
+        slotStepMinutes: 15,
+      })
       .subscribe({
         next: (response) => {
           this.slots = response.slots;
@@ -315,14 +362,22 @@ export class PublicBookingComponent {
   submit(): void {
     if (!this.business) return;
 
-    if (this.form.invalid) {
+    const raw = this.form.getRawValue();
+    const target = this.buildAvailabilityPayload();
+
+    if (
+      !raw.employeeId ||
+      !raw.date ||
+      !raw.startsAt ||
+      !raw.customerFirstName ||
+      !raw.customerLastName ||
+      !target
+    ) {
       this.form.markAllAsTouched();
       this.errorMessage =
-        'Completa los campos obligatorios: empleado, servicio, fecha, hora, nombre y apellidos.';
+        'Completa los campos obligatorios: empleado, servicio o combo, fecha, hora, nombre y apellidos.';
       return;
     }
-
-    const raw = this.form.getRawValue();
 
     this.isSubmitting = true;
     this.errorMessage = '';
@@ -331,7 +386,8 @@ export class PublicBookingComponent {
     this.businessesService
       .createPublicAppointment(this.business.id, {
         employeeId: raw.employeeId,
-        serviceId: raw.serviceId,
+        serviceId: target.serviceId,
+        servicePackageId: target.servicePackageId,
         startsAt: raw.startsAt,
         source: 'WEB',
         customerFirstName: raw.customerFirstName,
@@ -358,11 +414,15 @@ export class PublicBookingComponent {
   }
 
   getVisiblePromotions(): Promotion[] {
-    const selectedServiceId = this.form.getRawValue().serviceId;
+    const raw = this.form.getRawValue();
+
+    if (raw.bookingMode === 'PACKAGE') {
+      return this.promotions.filter((promo) => !promo.serviceId);
+    }
 
     return this.promotions.filter((promo) => {
       if (!promo.serviceId) return true;
-      return promo.serviceId === selectedServiceId;
+      return promo.serviceId === raw.serviceId;
     });
   }
 
