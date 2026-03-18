@@ -1,33 +1,131 @@
 <section class="page">
-  <h1>Dashboard</h1>
+  <div class="d-flex align-items-center mb-4">
+    <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+      <i class="bi bi-speedometer2 fs-4 text-primary"></i>
+    </div>
+    <div>
+      <h1 class="mb-1 fw-bold">Dashboard</h1>
+      <p class="text-muted mb-0">Panel de control principal</p>
+    </div>
+  </div>
 
   <ng-container *ngIf="session.isSuperadmin()">
-    <p>Panel global de superadmin.</p>
+    <div class="alert alert-info d-flex align-items-center" role="alert">
+      <i class="bi bi-info-circle me-2"></i>
+      <div>Panel global de superadmin - Gestiona todos los negocios del sistema</div>
+    </div>
 
-    <div class="cards">
-      <article class="card">
-        <h2>Negocios</h2>
-        <p>Gestiona altas y consulta el listado general.</p>
-        <a routerLink="/businesses">Ver negocios</a>
-      </article>
+    <div class="row g-4">
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100 border-0 shadow-sm hover-card">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center mb-3">
+              <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                <i class="bi bi-building fs-4 text-primary"></i>
+              </div>
+              <h2 class="card-title h5 mb-0 fw-semibold">Negocios</h2>
+            </div>
+            <p class="card-text text-muted">Gestiona altas y consulta el listado general de todos los negocios.</p>
+            <a routerLink="/businesses" class="btn btn-primary w-100">
+              <i class="bi bi-arrow-right-circle me-2"></i>Ver negocios
+            </a>
+          </div>
+        </div>
+      </div>
 
-      <article class="card">
-        <h2>Alta rápida</h2>
-        <p>Crea un nuevo negocio desde la interfaz.</p>
-        <a routerLink="/businesses/new">Crear negocio</a>
-      </article>
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100 border-0 shadow-sm hover-card">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center mb-3">
+              <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                <i class="bi bi-plus-circle fs-4 text-success"></i>
+              </div>
+              <h2 class="card-title h5 mb-0 fw-semibold">Alta rápida</h2>
+            </div>
+            <p class="card-text text-muted">Crea un nuevo negocio desde la interfaz de forma rápida y sencilla.</p>
+            <a routerLink="/businesses/new" class="btn btn-success w-100">
+              <i class="bi bi-plus-lg me-2"></i>Crear negocio
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100 border-0 shadow-sm hover-card">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center mb-3">
+              <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                <i class="bi bi-graph-up fs-4 text-info"></i>
+              </div>
+              <h2 class="card-title h5 mb-0 fw-semibold">Estadísticas</h2>
+            </div>
+            <p class="card-text text-muted">Visualiza métricas y análisis del sistema en tiempo real.</p>
+            <button class="btn btn-info w-100" disabled>
+              <i class="bi bi-bar-chart me-2"></i>Próximamente
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </ng-container>
 
   <ng-container *ngIf="session.isBusinessAdmin()">
-    <p>Panel del negocio. Desde aquí gestionarás empleados, servicios y agenda.</p>
+    <div class="alert alert-success d-flex align-items-center" role="alert">
+      <i class="bi bi-check-circle me-2"></i>
+      <div>Panel del negocio - Gestiona empleados, servicios y agenda</div>
+    </div>
 
-    <div class="cards">
-      <article class="card">
-        <h2>Mi negocio</h2>
-        <p>Accede al resumen operativo de tu negocio.</p>
-        <a routerLink="/my-business">Abrir panel</a>
-      </article>
+    <div class="row g-4">
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100 border-0 shadow-sm hover-card">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center mb-3">
+              <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                <i class="bi bi-shop fs-4 text-primary"></i>
+              </div>
+              <h2 class="card-title h5 mb-0 fw-semibold">Mi negocio</h2>
+            </div>
+            <p class="card-text text-muted">Accede al resumen operativo de tu negocio y configura tus servicios.</p>
+            <a routerLink="/my-business" class="btn btn-primary w-100">
+              <i class="bi bi-arrow-right-circle me-2"></i>Abrir panel
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100 border-0 shadow-sm hover-card">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center mb-3">
+              <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                <i class="bi bi-calendar-check fs-4 text-warning"></i>
+              </div>
+              <h2 class="card-title h5 mb-0 fw-semibold">Citas</h2>
+            </div>
+            <p class="card-text text-muted">Gestiona las citas y agenda de tus clientes de forma eficiente.</p>
+            <a routerLink="/appointments" class="btn btn-warning w-100">
+              <i class="bi bi-calendar3 me-2"></i>Ver citas
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100 border-0 shadow-sm hover-card">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center mb-3">
+              <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+                <i class="bi bi-people fs-4 text-info"></i>
+              </div>
+              <h2 class="card-title h5 mb-0 fw-semibold">Empleados</h2>
+            </div>
+            <p class="card-text text-muted">Administra tu equipo de empleados y sus disponibilidades.</p>
+            <a routerLink="/employees" class="btn btn-info w-100">
+              <i class="bi bi-person-badge me-2"></i>Gestionar equipo
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   </ng-container>
 </section>

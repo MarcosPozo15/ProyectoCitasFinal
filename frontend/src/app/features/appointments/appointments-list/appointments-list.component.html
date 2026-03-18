@@ -1,41 +1,107 @@
 <section class="page">
-  <div class="page-header">
+  <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <h1>Citas</h1>
-      <a class="back-link" routerLink="/my-business">← Volver a mi negocio</a>
+      <div class="d-flex align-items-center mb-2">
+        <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+          <i class="bi bi-calendar-check fs-4 text-primary"></i>
+        </div>
+        <div>
+          <h1 class="mb-0 fw-bold">Citas</h1>
+          <a class="text-decoration-none text-muted" routerLink="/my-business">
+            <i class="bi bi-arrow-left me-1"></i>Volver a mi negocio
+          </a>
+        </div>
+      </div>
     </div>
-
-    <a class="primary-link" [routerLink]="['/businesses', businessId, 'appointments', 'new']">
-      Nueva cita
+    <a class="btn btn-primary" [routerLink]="['/businesses', businessId, 'appointments', 'new']">
+      <i class="bi bi-plus-circle me-2"></i>Nueva cita
     </a>
   </div>
 
-  <p *ngIf="isLoading">Cargando...</p>
-  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  <div class="text-center py-5" *ngIf="isLoading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <p class="mt-3 text-muted">Cargando citas...</p>
+  </div>
 
-  <div class="grid" *ngIf="!isLoading && !errorMessage">
-    <article class="card" *ngFor="let item of items">
-      <h2>{{ item.customer.firstName }} {{ item.customer.lastName }}</h2>
-      <p>
-        <strong>Reserva:</strong>
-        {{ item.servicePackage?.name || item.service?.name || '-' }}
-      </p>
-      <p><strong>Empleado:</strong> {{ item.employee.firstName }} {{ item.employee.lastName }}</p>
-      <p><strong>Inicio:</strong> {{ item.startsAt }}</p>
-      <p><strong>Fin:</strong> {{ item.endsAt }}</p>
-      <p><strong>Estado:</strong> {{ item.status }}</p>
-      <p><strong>Canal:</strong> {{ item.source }}</p>
+  <div class="alert alert-danger" *ngIf="errorMessage">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    {{ errorMessage }}
+  </div>
 
-      <div class="actions">
-        <button
-          type="button"
-          class="danger-button"
-          *ngIf="canCancel(item)"
-          (click)="cancel(item)"
-        >
-          Cancelar cita
-        </button>
+  <div class="row g-4" *ngIf="!isLoading && !errorMessage">
+    <div class="col-12 col-md-6 col-lg-4" *ngFor="let item of items">
+      <div class="card h-100 border-0 shadow-sm hover-card">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-start justify-content-between mb-3">
+            <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+              <i class="bi bi-person fs-5 text-info"></i>
+            </div>
+            <span class="badge" [class]="getStatusBadgeClass(item.status)">
+              {{ getStatusText(item.status) }}
+            </span>
+          </div>
+
+          <h5 class="card-title fw-bold mb-3">
+            {{ item.customer.firstName }} {{ item.customer.lastName }}
+          </h5>
+          
+          <div class="mb-3">
+            <div class="d-flex align-items-center mb-2">
+              <i class="bi bi-box-seam text-muted me-2" style="width: 16px;"></i>
+              <small class="text-muted">Servicio:</small>
+              <span class="ms-2 fw-medium">{{ item.servicePackage?.name || item.service?.name || '-' }}</span>
+            </div>
+            
+            <div class="d-flex align-items-center mb-2">
+              <i class="bi bi-person-badge text-muted me-2" style="width: 16px;"></i>
+              <small class="text-muted">Empleado:</small>
+              <span class="ms-2 fw-medium">{{ item.employee.firstName }} {{ item.employee.lastName }}</span>
+            </div>
+            
+            <div class="d-flex align-items-center mb-2">
+              <i class="bi bi-clock text-muted me-2" style="width: 16px;"></i>
+              <small class="text-muted">Inicio:</small>
+              <span class="ms-2 fw-medium">{{ item.startsAt | date:'short' }}</span>
+            </div>
+            
+            <div class="d-flex align-items-center mb-2">
+              <i class="bi bi-clock-history text-muted me-2" style="width: 16px;"></i>
+              <small class="text-muted">Fin:</small>
+              <span class="ms-2 fw-medium">{{ item.endsAt | date:'short' }}</span>
+            </div>
+            
+            <div class="d-flex align-items-center">
+              <i class="bi bi-globe text-muted me-2" style="width: 16px;"></i>
+              <small class="text-muted">Canal:</small>
+              <span class="ms-2 fw-medium">{{ item.source }}</span>
+            </div>
+          </div>
+
+          <div class="mt-auto">
+            <button
+              type="button"
+              class="btn btn-outline-danger btn-sm w-100"
+              *ngIf="canCancel(item)"
+              (click)="cancel(item)"
+            >
+              <i class="bi bi-x-circle me-1"></i>Cancelar cita
+            </button>
+          </div>
+        </div>
       </div>
-    </article>
+    </div>
+  </div>
+
+  <div class="text-center py-5" *ngIf="!isLoading && !errorMessage && items.length === 0">
+    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+      <i class="bi bi-calendar-x fs-1 text-muted"></i>
+    </div>
+    <h4 class="text-muted">No hay citas</h4>
+    <p class="text-muted">No tienes citas programadas</p>
+    <a class="btn btn-primary" [routerLink]="['/businesses', businessId, 'appointments', 'new']">
+      <i class="bi bi-plus-circle me-2"></i>Crear primera cita
+    </a>
   </div>
 </section>

@@ -1,91 +1,161 @@
 <section class="page">
-  <div class="page-header">
-    <h1>Nueva cita</h1>
-    <a [routerLink]="['/businesses', businessId, 'appointments']">Volver</a>
-  </div>
-
-  <p *ngIf="isLoading">Cargando datos...</p>
-
-  <form class="form-card" *ngIf="!isLoading" [formGroup]="form" (ngSubmit)="submit()">
-    <div class="grid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+      <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+        <i class="bi bi-calendar-plus fs-4 text-primary"></i>
+      </div>
       <div>
-        <label>Empleado</label>
-        <select formControlName="employeeId">
-          <option *ngFor="let employee of employees" [value]="employee.id">
-            {{ employee.firstName }} {{ employee.lastName }}
-          </option>
-        </select>
-      </div>
-
-      <div>
-        <label>Servicio</label>
-        <select formControlName="serviceId">
-          <option *ngFor="let service of services" [value]="service.id">
-            {{ service.name }}
-          </option>
-        </select>
-      </div>
-
-      <div>
-        <label>Fecha</label>
-        <input type="date" formControlName="date" />
-      </div>
-
-      <div class="availability-actions">
-        <button type="button" (click)="searchAvailability()" [disabled]="isSearching">
-          {{ isSearching ? 'Buscando...' : 'Buscar huecos' }}
-        </button>
-      </div>
-
-      <div class="full" *ngIf="slots.length > 0">
-        <label>Huecos disponibles</label>
-        <div class="slots">
-          <button
-            type="button"
-            class="slot-btn"
-            *ngFor="let slot of slots"
-            (click)="chooseSlot(slot)"
-          >
-            {{ slot.startTime }} - {{ slot.endTime }}
-          </button>
-        </div>
-      </div>
-
-      <div class="full">
-        <label>StartAt seleccionado</label>
-        <input type="text" formControlName="startsAt" />
-      </div>
-
-      <div>
-        <label>Nombre cliente</label>
-        <input type="text" formControlName="customerFirstName" />
-      </div>
-
-      <div>
-        <label>Apellidos cliente</label>
-        <input type="text" formControlName="customerLastName" />
-      </div>
-
-      <div>
-        <label>Email cliente</label>
-        <input type="email" formControlName="customerEmail" />
-      </div>
-
-      <div>
-        <label>Teléfono cliente</label>
-        <input type="text" formControlName="customerPhone" />
-      </div>
-
-      <div class="full">
-        <label>Notas</label>
-        <textarea rows="4" formControlName="customerNotes"></textarea>
+        <h1 class="mb-0 fw-bold">Nueva cita</h1>
+        <p class="text-muted mb-0">Programa una nueva cita para tu cliente</p>
       </div>
     </div>
+    <a [routerLink]="['/businesses', businessId, 'appointments']" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-2"></i>Volver
+    </a>
+  </div>
 
-    <button type="submit" [disabled]="isSubmitting">
-      {{ isSubmitting ? 'Guardando...' : 'Crear cita' }}
-    </button>
+  <div class="text-center py-5" *ngIf="isLoading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando datos...</span>
+    </div>
+    <p class="mt-3 text-muted">Cargando datos...</p>
+  </div>
 
-    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
-  </form>
+  <div class="card shadow-sm border-0" *ngIf="!isLoading">
+    <div class="card-body p-4">
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <div class="row g-3">
+          <!-- Información de la cita -->
+          <div class="col-12">
+            <h5 class="card-title mb-3">
+              <i class="bi bi-info-circle me-2"></i>Información de la cita
+            </h5>
+          </div>
+
+          <div class="col-md-6">
+            <label for="employeeId" class="form-label fw-semibold">
+              <i class="bi bi-person-badge me-2"></i>Empleado
+            </label>
+            <select class="form-select" id="employeeId" formControlName="employeeId">
+              <option value="">Selecciona un empleado</option>
+              <option *ngFor="let employee of employees" [value]="employee.id">
+                {{ employee.firstName }} {{ employee.lastName }}
+              </option>
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label for="serviceId" class="form-label fw-semibold">
+              <i class="bi bi-cone-striped me-2"></i>Servicio
+            </label>
+            <select class="form-select" id="serviceId" formControlName="serviceId">
+              <option value="">Selecciona un servicio</option>
+              <option *ngFor="let service of services" [value]="service.id">
+                {{ service.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label for="date" class="form-label fw-semibold">
+              <i class="bi bi-calendar me-2"></i>Fecha
+            </label>
+            <input type="date" class="form-control" id="date" formControlName="date" />
+          </div>
+
+          <div class="col-md-6 d-flex align-items-end">
+            <button 
+              type="button" 
+              class="btn btn-info w-100" 
+              (click)="searchAvailability()" 
+              [disabled]="isSearching"
+            >
+              <span *ngIf="isSearching" class="spinner-border spinner-border-sm me-2"></span>
+              <i class="bi bi-search me-2"></i>
+              {{ isSearching ? 'Buscando...' : 'Buscar huecos' }}
+            </button>
+          </div>
+
+          <div class="col-12" *ngIf="slots.length > 0">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-clock me-2"></i>Huecos disponibles
+            </label>
+            <div class="d-flex gap-2 flex-wrap">
+              <button
+                type="button"
+                class="btn btn-outline-primary slot-btn"
+                *ngFor="let slot of slots"
+                (click)="chooseSlot(slot)"
+              >
+                <i class="bi bi-clock-fill me-1"></i>
+                {{ slot.startTime }} - {{ slot.endTime }}
+              </button>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <label for="startsAt" class="form-label fw-semibold">
+              <i class="bi bi-clock-history me-2"></i>StartAt seleccionado
+            </label>
+            <input type="text" class="form-control" id="startsAt" formControlName="startsAt" readonly />
+          </div>
+
+          <!-- Información del cliente -->
+          <div class="col-12 mt-4">
+            <h5 class="card-title mb-3">
+              <i class="bi bi-person me-2"></i>Información del cliente
+            </h5>
+          </div>
+
+          <div class="col-md-6">
+            <label for="customerFirstName" class="form-label fw-semibold">
+              <i class="bi bi-person me-2"></i>Nombre cliente
+            </label>
+            <input type="text" class="form-control" id="customerFirstName" formControlName="customerFirstName" placeholder="Juan" />
+          </div>
+
+          <div class="col-md-6">
+            <label for="customerLastName" class="form-label fw-semibold">
+              <i class="bi bi-person me-2"></i>Apellidos cliente
+            </label>
+            <input type="text" class="form-control" id="customerLastName" formControlName="customerLastName" placeholder="Pérez" />
+          </div>
+
+          <div class="col-md-6">
+            <label for="customerEmail" class="form-label fw-semibold">
+              <i class="bi bi-envelope me-2"></i>Email cliente
+            </label>
+            <input type="email" class="form-control" id="customerEmail" formControlName="customerEmail" placeholder="juan@ejemplo.com" />
+          </div>
+
+          <div class="col-md-6">
+            <label for="customerPhone" class="form-label fw-semibold">
+              <i class="bi bi-telephone me-2"></i>Teléfono cliente
+            </label>
+            <input type="text" class="form-control" id="customerPhone" formControlName="customerPhone" placeholder="600123456" />
+          </div>
+
+          <div class="col-12">
+            <label for="customerNotes" class="form-label fw-semibold">
+              <i class="bi bi-chat-text me-2"></i>Notas
+            </label>
+            <textarea class="form-control" id="customerNotes" rows="3" formControlName="customerNotes" placeholder="Notas adicionales sobre la cita..."></textarea>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-4">
+          <div class="alert alert-danger mb-0" *ngIf="errorMessage">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            {{ errorMessage }}
+          </div>
+          
+          <button type="submit" class="btn btn-primary btn-lg ms-auto" [disabled]="isSubmitting || form.invalid">
+            <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+            <i class="bi bi-check-circle me-2"></i>
+            {{ isSubmitting ? 'Guardando...' : 'Crear cita' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </section>

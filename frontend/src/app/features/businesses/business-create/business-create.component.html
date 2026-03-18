@@ -1,116 +1,215 @@
 <section class="page">
-  <div class="page-header">
-    <h1>Nuevo negocio</h1>
-    <a routerLink="/">Volver</a>
-  </div>
-
-  <form class="form-card" [formGroup]="form" (ngSubmit)="submit()">
-    <div class="grid">
-      <div>
-        <label>Nombre</label>
-        <input type="text" formControlName="name" />
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+      <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px;">
+        <i class="bi bi-plus-circle fs-4 text-success"></i>
       </div>
-
       <div>
-        <label>Slug</label>
-        <input type="text" formControlName="slug" />
-      </div>
-
-      <div>
-        <label>Razón social</label>
-        <input type="text" formControlName="legalName" />
-      </div>
-
-      <div>
-        <label>CIF/NIF</label>
-        <input type="text" formControlName="taxId" />
-      </div>
-
-      <div>
-        <label>Email negocio</label>
-        <input type="email" formControlName="email" />
-      </div>
-
-      <div>
-        <label>Teléfono negocio</label>
-        <input type="text" formControlName="phone" />
-      </div>
-
-      <div>
-        <label>Web</label>
-        <input type="text" formControlName="website" />
-      </div>
-
-      <div>
-        <label>Depósito %</label>
-        <input type="number" formControlName="depositPercentage" />
-      </div>
-
-      <div>
-        <label>Color principal</label>
-        <input type="text" formControlName="primaryColor" />
-      </div>
-
-      <div>
-        <label>Color secundario</label>
-        <input type="text" formControlName="secondaryColor" />
-      </div>
-
-      <div>
-        <label>Dirección</label>
-        <input type="text" formControlName="addressLine1" />
-      </div>
-
-      <div>
-        <label>Ciudad</label>
-        <input type="text" formControlName="city" />
-      </div>
-
-      <div>
-        <label>Código postal</label>
-        <input type="text" formControlName="postalCode" />
-      </div>
-
-      <div>
-        <label>País</label>
-        <input type="text" formControlName="country" />
-      </div>
-
-      <div class="full">
-        <label>Descripción</label>
-        <textarea rows="4" formControlName="description"></textarea>
-      </div>
-
-      <div>
-        <label>Admin email</label>
-        <input type="email" formControlName="adminEmail" />
-      </div>
-
-      <div>
-        <label>Admin contraseña</label>
-        <input type="password" formControlName="adminPassword" />
-      </div>
-
-      <div>
-        <label>Admin nombre</label>
-        <input type="text" formControlName="adminFirstName" />
-      </div>
-
-      <div>
-        <label>Admin apellidos</label>
-        <input type="text" formControlName="adminLastName" />
-      </div>
-
-      <div>
-        <label>Admin teléfono</label>
-        <input type="text" formControlName="adminPhone" />
+        <h1 class="mb-0 fw-bold">Nuevo negocio</h1>
+        <p class="text-muted mb-0">Registra un nuevo negocio en el sistema</p>
       </div>
     </div>
+    <a routerLink="/" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-2"></i>Volver
+    </a>
+  </div>
 
-    <button type="submit" [disabled]="isSubmitting">
-      {{ isSubmitting ? 'Guardando...' : 'Crear negocio' }}
-    </button>
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        <!-- Información básica -->
+        <div class="mb-5">
+          <h5 class="card-title mb-4">
+            <i class="bi bi-info-circle me-2"></i>Información básica
+          </h5>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="name" class="form-label fw-semibold">
+                <i class="bi bi-building me-2"></i>Nombre
+              </label>
+              <input type="text" class="form-control" id="name" formControlName="name" placeholder="Nombre del negocio" />
+            </div>
 
-    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
-  </form>
+            <div class="col-md-6">
+              <label for="slug" class="form-label fw-semibold">
+                <i class="bi bi-link-45deg me-2"></i>Slug
+              </label>
+              <input type="text" class="form-control" id="slug" formControlName="slug" placeholder="nombre-del-negocio" />
+            </div>
+
+            <div class="col-md-6">
+              <label for="legalName" class="form-label fw-semibold">
+                <i class="bi bi-file-text me-2"></i>Razón social
+              </label>
+              <input type="text" class="form-control" id="legalName" formControlName="legalName" placeholder="Empresa S.L." />
+            </div>
+
+            <div class="col-md-6">
+              <label for="taxId" class="form-label fw-semibold">
+                <i class="bi bi-receipt me-2"></i>CIF/NIF
+              </label>
+              <input type="text" class="form-control" id="taxId" formControlName="taxId" placeholder="B12345678" />
+            </div>
+
+            <div class="col-12">
+              <label for="description" class="form-label fw-semibold">
+                <i class="bi bi-text-paragraph me-2"></i>Descripción
+              </label>
+              <textarea class="form-control" id="description" rows="3" formControlName="description" placeholder="Describe tu negocio..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contacto -->
+        <div class="mb-5">
+          <h5 class="card-title mb-4">
+            <i class="bi bi-telephone me-2"></i>Contacto
+          </h5>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="email" class="form-label fw-semibold">
+                <i class="bi bi-envelope me-2"></i>Email negocio
+              </label>
+              <input type="email" class="form-control" id="email" formControlName="email" placeholder="negocio@ejemplo.com" />
+            </div>
+
+            <div class="col-md-6">
+              <label for="phone" class="form-label fw-semibold">
+                <i class="bi bi-telephone me-2"></i>Teléfono negocio
+              </label>
+              <input type="text" class="form-control" id="phone" formControlName="phone" placeholder="600123456" />
+            </div>
+
+            <div class="col-md-6">
+              <label for="website" class="form-label fw-semibold">
+                <i class="bi bi-globe me-2"></i>Web
+              </label>
+              <input type="text" class="form-control" id="website" formControlName="website" placeholder="https://www.ejemplo.com" />
+            </div>
+
+            <div class="col-md-6">
+              <label for="depositPercentage" class="form-label fw-semibold">
+                <i class="bi bi-percent me-2"></i>Depósito %
+              </label>
+              <input type="number" class="form-control" id="depositPercentage" formControlName="depositPercentage" placeholder="10" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Dirección -->
+        <div class="mb-5">
+          <h5 class="card-title mb-4">
+            <i class="bi bi-geo-alt me-2"></i>Dirección
+          </h5>
+          <div class="row g-3">
+            <div class="col-12">
+              <label for="addressLine1" class="form-label fw-semibold">
+                <i class="bi bi-house me-2"></i>Dirección
+              </label>
+              <input type="text" class="form-control" id="addressLine1" formControlName="addressLine1" placeholder="Calle Principal, 123" />
+            </div>
+
+            <div class="col-md-6">
+              <label for="city" class="form-label fw-semibold">
+                <i class="bi bi-building me-2"></i>Ciudad
+              </label>
+              <input type="text" class="form-control" id="city" formControlName="city" placeholder="Madrid" />
+            </div>
+
+            <div class="col-md-6">
+              <label for="postalCode" class="form-label fw-semibold">
+                <i class="bi bi-mailbox me-2"></i>Código postal
+              </label>
+              <input type="text" class="form-control" id="postalCode" formControlName="postalCode" placeholder="28001" />
+            </div>
+
+            <div class="col-md-6">
+              <label for="country" class="form-label fw-semibold">
+                <i class="bi bi-flag me-2"></i>País
+              </label>
+              <input type="text" class="form-control" id="country" formControlName="country" placeholder="España" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Administrador -->
+        <div class="mb-5">
+          <h5 class="card-title mb-4">
+            <i class="bi bi-person-badge me-2"></i>Administrador
+          </h5>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="adminEmail" class="form-label fw-semibold">
+                <i class="bi bi-envelope me-2"></i>Admin email
+              </label>
+              <input type="email" class="form-control" id="adminEmail" formControlName="adminEmail" placeholder="admin@ejemplo.com" />
+            </div>
+
+            <div class="col-md-6">
+              <label for="adminPassword" class="form-label fw-semibold">
+                <i class="bi bi-lock me-2"></i>Admin contraseña
+              </label>
+              <input type="password" class="form-control" id="adminPassword" formControlName="adminPassword" placeholder="••••••••" />
+            </div>
+
+            <div class="col-md-6">
+              <label for="adminFirstName" class="form-label fw-semibold">
+                <i class="bi bi-person me-2"></i>Admin nombre
+              </label>
+              <input type="text" class="form-control" id="adminFirstName" formControlName="adminFirstName" placeholder="Juan" />
+            </div>
+
+            <div class="col-md-6">
+              <label for="adminLastName" class="form-label fw-semibold">
+                <i class="bi bi-person me-2"></i>Admin apellidos
+              </label>
+              <input type="text" class="form-control" id="adminLastName" formControlName="adminLastName" placeholder="Pérez" />
+            </div>
+
+            <div class="col-md-6">
+              <label for="adminPhone" class="form-label fw-semibold">
+                <i class="bi bi-telephone me-2"></i>Admin teléfono
+              </label>
+              <input type="text" class="form-control" id="adminPhone" formControlName="adminPhone" placeholder="600123456" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Colores -->
+        <div class="mb-4">
+          <h5 class="card-title mb-4">
+            <i class="bi bi-palette me-2"></i>Personalización
+          </h5>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="primaryColor" class="form-label fw-semibold">
+                <i class="bi bi-droplet-fill me-2"></i>Color principal
+              </label>
+              <input type="text" class="form-control" id="primaryColor" formControlName="primaryColor" placeholder="#0d6efd" />
+            </div>
+
+            <div class="col-md-6">
+              <label for="secondaryColor" class="form-label fw-semibold">
+                <i class="bi bi-droplet me-2"></i>Color secundario
+              </label>
+              <input type="text" class="form-control" id="secondaryColor" formControlName="secondaryColor" placeholder="#6ea8fe" />
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="alert alert-danger mb-0" *ngIf="errorMessage">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            {{ errorMessage }}
+          </div>
+          
+          <button type="submit" class="btn btn-success btn-lg ms-auto" [disabled]="isSubmitting || form.invalid">
+            <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+            <i class="bi bi-check-circle me-2"></i>
+            {{ isSubmitting ? 'Guardando...' : 'Crear negocio' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </section>
